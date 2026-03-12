@@ -1,11 +1,12 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "jsx": "react",
     "module": "commonjs",
+    "moduleResolution": "node",
     "target": "es2020",
     "outDir": "./dist",
-    "rootDir": "./src"
+    "rootDir": "./src",
+    "jsx": "react"
   },
   "include": ["src"]
 }
