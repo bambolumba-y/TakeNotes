@@ -4,11 +4,13 @@ import {
   listRemindersHandler, getReminderHandler, createReminderHandler,
   updateReminderHandler, deleteReminderHandler,
   completeReminderHandler, snoozeReminderHandler, cancelReminderHandler, restoreReminderHandler,
+  listArchivedRemindersHandler,
 } from './reminders.handler'
 
 export async function remindersRoutes(app: FastifyInstance) {
   app.addHook('preHandler', requireAuth)
   app.get('/reminders', listRemindersHandler)
+  app.get('/reminders/archived', listArchivedRemindersHandler)
   app.post('/reminders', createReminderHandler)
   app.get('/reminders/:id', getReminderHandler)
   app.patch('/reminders/:id', updateReminderHandler)

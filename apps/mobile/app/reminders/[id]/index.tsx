@@ -23,13 +23,14 @@ export default function ReminderDetailScreen() {
   const { complete, snooze, cancel } = useRemindersStore()
   const [reminder, setReminder] = useState<Reminder | null>(null)
   const [snoozeModalVisible, setSnoozeModalVisible] = useState(false)
+  const [cancelModalVisible, setCancelModalVisible] = useState(false)
   const [completing, setCompleting] = useState(false)
   const [cancelling, setCancelling] = useState(false)
 
   const SNOOZE_PRESETS = [
     { label: t('snooze5min'), minutes: 5 },
     { label: t('snooze15min'), minutes: 15 },
-    { label: '30 min', minutes: 30 },
+    { label: t('snooze30min'), minutes: 30 },
     { label: t('snooze1hour'), minutes: 60 },
     { label: t('snooze3hours'), minutes: 180 },
   ]
@@ -52,10 +53,20 @@ export default function ReminderDetailScreen() {
   }
 
   const handleCancel = () => {
-    Alert.alert(t('cancelReminder'), 'This reminder will be cancelled.', [
-      { text: t('back'), style: 'cancel' },
-      { text: t('cancelReminder'), style: 'destructive', onPress: async () => { await cancel(id); router.back() } },
-    ])
+    setCancelModalVisible(true)
+  }
+
+  const confirmCancel = async () => {
+    setCancelling(true)
+    try {
+      await cancel(id)
+      setCancelModalVisible(false)
+      router.back()
+    } catch (e) {
+      Alert.alert('Error', (e as Error).message)
+    } finally {
+      setCancelling(false)
+    }
   }
 
   if (!reminder) return (
@@ -86,7 +97,7 @@ export default function ReminderDetailScreen() {
           <Text style={[theme.typography.body, { color: theme.colors.accent.primary }]}>← {t('back')}</Text>
         </TouchableOpacity>
         <View style={[styles.priorityBadge, { backgroundColor: priorityColor + '20' }]}>
-          <Text style={[theme.typography.micro, { color: priorityColor }]}>{reminder.priority.toUpperCase()}</Text>
+          <Text style={[theme.typography.micro, { color: priorityColor }]}>{t(reminder.priority as 'low' | 'medium' | 'high' | 'urgent').toUpperCase()}</Text>
         </View>
       </View>
 
@@ -98,7 +109,7 @@ export default function ReminderDetailScreen() {
         <View style={[styles.infoBlock, { backgroundColor: theme.colors.bg.surface, borderColor: isOverdue ? theme.colors.status.warning : theme.colors.border.default }]}>
           <Text style={[theme.typography.captionStrong, { color: theme.colors.text.tertiary }]}>{t('due').toUpperCase()}</Text>
           <Text style={[theme.typography.bodyStrong, { color: isOverdue ? theme.colors.status.warning : theme.colors.text.primary, marginTop: 2 }]}>
-            {isOverdue ? '⚠ Overdue · ' : ''}{new Date(reminder.dueAt).toLocaleString()}
+            {isOverdue ? `⚠ ${t('overdueLabel')} · ` : ''}{new Date(reminder.dueAt).toLocaleString()}
           </Text>
           <Text style={[theme.typography.caption, { color: theme.colors.text.tertiary, marginTop: 2 }]}>{reminder.timezone}</Text>
         </View>
@@ -153,7 +164,7 @@ export default function ReminderDetailScreen() {
                 >
                   <Text style={{ fontSize: 16 }}>{CHANNEL_ICONS[ch]}</Text>
                   <Text style={[theme.typography.captionStrong, { color: isSelected ? theme.colors.accent.primary : theme.colors.text.tertiary, marginLeft: 6 }]}>
-                    {ch.charAt(0).toUpperCase() + ch.slice(1)}
+                    {ch === 'push' ? t('pushOnly') : ch === 'email' ? t('emailChannel') : t('telegram')}
                   </Text>
                 </View>
               )
@@ -197,6 +208,32 @@ export default function ReminderDetailScreen() {
           </View>
         </View>
       </Modal>
+
+      {/* Cancel reminder confirmation modal */}
+      <Modal visible={cancelModalVisible} transparent animationType="fade">
+        <View style={styles.confirmModalOverlay}>
+          <View style={[styles.confirmModalCard, { backgroundColor: theme.colors.bg.surface, borderColor: theme.colors.border.default }]}>
+            <Text style={[theme.typography.title2, { color: theme.colors.text.primary, marginBottom: 8 }]}>{t('cancelReminder')}</Text>
+            <Text style={[theme.typography.body, { color: theme.colors.text.secondary, marginBottom: 24 }]}>{t('cancelReminderBody')}</Text>
+            <View style={styles.confirmModalActions}>
+              <TouchableOpacity
+                style={[styles.confirmModalBtn, { borderColor: theme.colors.border.default, borderWidth: 1.5 }]}
+                onPress={() => setCancelModalVisible(false)}
+                disabled={cancelling}
+              >
+                <Text style={[theme.typography.bodyStrong, { color: theme.colors.text.secondary }]}>{t('back')}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.confirmModalBtn, { backgroundColor: theme.colors.status.error }]}
+                onPress={confirmCancel}
+                disabled={cancelling}
+              >
+                <Text style={[theme.typography.bodyStrong, { color: '#FFFFFF' }]}>{t('cancelReminder')}</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   )
 }
@@ -215,4 +252,8 @@ const styles = StyleSheet.create({
   modalOverlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.4)' },
   modalSheet: { borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 24, paddingBottom: 40 },
   snoozeOption: { paddingVertical: 16, borderBottomWidth: 1 },
+  confirmModalOverlay: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.55)', padding: 24 },
+  confirmModalCard: { width: '100%', maxWidth: 400, borderRadius: 20, borderWidth: 1, padding: 24 },
+  confirmModalActions: { flexDirection: 'row', gap: 10 },
+  confirmModalBtn: { flex: 1, height: 48, borderRadius: 14, justifyContent: 'center', alignItems: 'center' },
 })

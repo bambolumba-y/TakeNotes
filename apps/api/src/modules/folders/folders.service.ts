@@ -37,6 +37,8 @@ export async function updateFolder(userId: string, id: string, input: Partial<{ 
 export async function deleteFolder(userId: string, id: string): Promise<void> {
   // null out folder_id in notes first
   await supabase.from('notes').update({ folder_id: null }).eq('folder_id', id).eq('user_id', userId)
+  // null out folder_id in reminders
+  await supabase.from('reminders').update({ folder_id: null }).eq('folder_id', id).eq('user_id', userId)
   const { error } = await supabase.from('folders').delete().eq('id', id).eq('user_id', userId)
   if (error) throw new Error(error.message)
 }

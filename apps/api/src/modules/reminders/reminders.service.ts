@@ -118,7 +118,7 @@ export async function listReminders(userId: string, query: {
   let q = supabase.from('reminders').select(REMINDER_SELECT).eq('user_id', userId)
 
   if (query.view === 'active') {
-    q = q.eq('status', ReminderStatus.Active).or(`snooze_until.is.null,snooze_until.lt.${now}`).gte('due_at', now)
+    q = q.eq('status', ReminderStatus.Active)
   } else if (query.view === 'today') {
     q = q.eq('status', ReminderStatus.Active)
       .gte('due_at', todayStart)

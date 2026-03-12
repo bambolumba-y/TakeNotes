@@ -342,7 +342,7 @@ export default function SettingsScreen() {
       setTelegramLinkState('waiting')
       startTelegramPoll()
     } catch {
-      setConnectError('Failed to start connection. Check your internet and try again.')
+      setConnectError(t('failedToConnect'))
       setTelegramLinkState('error')
     }
   }
@@ -469,13 +469,9 @@ export default function SettingsScreen() {
               {t('connectTelegram')}
             </Text>
             <Text style={[theme.typography.body, { color: theme.colors.text.secondary, marginBottom: 12 }]}>
-              Open Telegram and send the following command to{' '}
-              <Text style={{ color: theme.colors.accent.primary }}>
-                {process.env.EXPO_PUBLIC_TELEGRAM_BOT_USERNAME
-                  ? `@${process.env.EXPO_PUBLIC_TELEGRAM_BOT_USERNAME}`
-                  : 'your bot'}
-              </Text>
-              :
+              {t('telegramInstructions')
+                .replace('{token}', connectToken)
+                .replace('{bot}', process.env.EXPO_PUBLIC_TELEGRAM_BOT_USERNAME ?? 'your_bot')}
             </Text>
             <View
               style={[

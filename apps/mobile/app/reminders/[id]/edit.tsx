@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import {
   View,
   Text,
@@ -18,9 +18,10 @@ import { useTheme } from '@/theme/useTheme'
 import { useRemindersStore } from '@/store/reminders'
 import { useFoldersStore } from '@/store/folders'
 import { useThemesStore } from '@/store/themes'
+import { remindersService } from '@/services/reminders.service'
 import { InputField } from '@/components/ui/InputField'
 import { Button } from '@/components/ui/Button'
-import type { Folder, ThemeEntity } from '@takenotes/shared'
+import type { Folder, ThemeEntity, Reminder } from '@takenotes/shared'
 import { useI18n } from '@/lib/i18n'
 
 const PRIORITY_OPTIONS = [
@@ -71,7 +72,21 @@ export default function EditReminderScreen() {
   const { folders } = useFoldersStore()
   const { themes } = useThemesStore()
 
-  const existing = reminders.find((r) => r.id === id)
+  const storeReminder = reminders.find((r) => r.id === id)
+  const [fetchedReminder, setFetchedReminder] = useState<Reminder | null>(null)
+  const [fetchError, setFetchError] = useState(false)
+  const [fetchLoading, setFetchLoading] = useState(!storeReminder)
+
+  useEffect(() => {
+    if (!storeReminder) {
+      setFetchLoading(true)
+      remindersService.get(id)
+        .then((r) => { setFetchedReminder(r); setFetchLoading(false) })
+        .catch(() => { setFetchError(true); setFetchLoading(false) })
+    }
+  }, [id, storeReminder])
+
+  const existing = storeReminder ?? fetchedReminder
 
   const initialDue = existing?.dueAt ? new Date(existing.dueAt) : (() => {
     const d = new Date()
@@ -107,7 +122,7 @@ export default function EditReminderScreen() {
     },
   })
 
-  if (!existing) {
+  if (fetchLoading) {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.bg.app }]}>
         <View style={[styles.topBar, { borderBottomColor: theme.colors.border.default }]}>
@@ -119,6 +134,28 @@ export default function EditReminderScreen() {
         </View>
         <View style={styles.centered}>
           <ActivityIndicator size="large" color={theme.colors.accent.primary} />
+        </View>
+      </SafeAreaView>
+    )
+  }
+
+  if (fetchError || !existing) {
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.bg.app }]}>
+        <View style={[styles.topBar, { borderBottomColor: theme.colors.border.default }]}>
+          <TouchableOpacity onPress={() => router.back()}>
+            <Text style={[theme.typography.body, { color: theme.colors.accent.primary }]}>{t('back')}</Text>
+          </TouchableOpacity>
+          <Text style={[theme.typography.bodyStrong, { color: theme.colors.text.primary }]}>{t('editReminder')}</Text>
+          <View style={{ width: 60 }} />
+        </View>
+        <View style={styles.centered}>
+          <Text style={[theme.typography.body, { color: theme.colors.text.secondary, textAlign: 'center', marginBottom: 16 }]}>
+            {t('somethingWentWrong')}
+          </Text>
+          <TouchableOpacity onPress={() => router.back()}>
+            <Text style={[theme.typography.bodyStrong, { color: theme.colors.accent.primary }]}>{t('back')}</Text>
+          </TouchableOpacity>
         </View>
       </SafeAreaView>
     )
@@ -283,7 +320,7 @@ export default function EditReminderScreen() {
           )}
 
           <Text style={[theme.typography.micro, { color: theme.colors.text.tertiary, marginTop: 6 }]}>
-            Timezone: {Intl.DateTimeFormat().resolvedOptions().timeZone}
+            {t('timezoneLabel')} {Intl.DateTimeFormat().resolvedOptions().timeZone}
           </Text>
         </View>
 

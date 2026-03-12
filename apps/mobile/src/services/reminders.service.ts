@@ -23,4 +23,5 @@ export const remindersService = {
   snooze: (id: string, snoozeUntil: string) => apiFetch<ApiResponse<Reminder>>(`/reminders/${id}/snooze`, { method: 'POST', body: JSON.stringify({ snoozeUntil }) }).then((r) => r.data),
   cancel: (id: string) => apiFetch<ApiResponse<Reminder>>(`/reminders/${id}/cancel`, { method: 'POST' }).then((r) => r.data),
   restore: (id: string) => apiFetch<ApiResponse<Reminder>>(`/reminders/${id}/restore`, { method: 'POST' }).then((r) => r.data),
+  listArchived: () => apiFetch<ApiResponse<Reminder[]>>('/reminders/archived').then((r) => r.data),
 }

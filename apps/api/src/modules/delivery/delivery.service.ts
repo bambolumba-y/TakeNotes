@@ -27,6 +27,8 @@ export async function orchestrateDelivery(ctx: DeliveryContext): Promise<void> {
     job_key: jobKey,
   })
 
+  const channelErrors: string[] = []
+
   for (const channel of channels) {
     const idempotencyKey = `${jobKey}:${channel}`
     const channelLog = deliveryLog.child({ channel_type: channel, idempotency_key: idempotencyKey })
@@ -120,13 +122,17 @@ export async function orchestrateDelivery(ctx: DeliveryContext): Promise<void> {
       await updateLog(logRecord?.id, success ? 'sent' : 'failed', providerMessageId, errorMessage)
       channelLog.info({ success, has_error: !!errorMessage }, 'Delivery attempt completed')
 
-      if (!success && errorMessage) throw new Error(`${channel} delivery failed: ${errorMessage}`)
+      if (!success && errorMessage) channelErrors.push(`${channel} delivery failed: ${errorMessage}`)
 
     } catch (err) {
       await updateLog(logRecord?.id, 'failed', undefined, (err as Error).message)
       channelLog.error({ err_message: (err as Error).message }, 'Delivery channel attempt failed')
-      throw err
+      channelErrors.push(`${channel}: ${(err as Error).message}`)
     }
+  }
+
+  if (channelErrors.length > 0) {
+    throw new Error(channelErrors.join(' | '))
   }
 }
 

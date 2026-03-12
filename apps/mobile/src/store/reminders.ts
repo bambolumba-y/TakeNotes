@@ -34,7 +34,7 @@ export const useRemindersStore = create<RemindersState>((set, get) => ({
     set({ reminders, isLoading: false })
   },
   fetchArchived: async () => {
-    const archived = await remindersService.list({ status: 'completed' as never })
+    const archived = await remindersService.listArchived()
     set({ archivedReminders: archived })
   },
   create: async (input) => {

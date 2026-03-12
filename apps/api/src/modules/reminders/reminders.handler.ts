@@ -69,3 +69,7 @@ export async function restoreReminderHandler(req: FastifyRequest, reply: Fastify
     return reply.status(400).send({ success: false, error: { code: 'INVALID_RESTORE', message: (e as Error).message } })
   }
 }
+
+export async function listArchivedRemindersHandler(req: FastifyRequest, reply: FastifyReply) {
+  return reply.send({ success: true, data: await svc.listArchivedReminders(req.user!.id) })
+}

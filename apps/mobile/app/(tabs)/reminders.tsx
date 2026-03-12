@@ -153,7 +153,12 @@ export default function RemindersScreen() {
       </View>
 
       {/* Subtabs */}
-      <View style={styles.tabRow}>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={[styles.tabRow, { paddingHorizontal: 16 }]}
+        style={{ flexGrow: 0, marginBottom: 12 }}
+      >
         {TABS.map((tab) => {
           const isActive = activeView === tab.key
           return (
@@ -180,7 +185,7 @@ export default function RemindersScreen() {
             </TouchableOpacity>
           )
         })}
-      </View>
+      </ScrollView>
 
       <SearchInput value={search} onChangeText={setSearch} placeholder={t('searchReminders')} />
 
@@ -332,7 +337,7 @@ export default function RemindersScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   header: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 8 },
-  tabRow: { flexDirection: 'row', paddingHorizontal: 16, marginBottom: 12, gap: 8 },
+  tabRow: { flexDirection: 'row', gap: 8 },
   tab: { paddingHorizontal: 14, paddingVertical: 7, borderRadius: 999, borderWidth: 1.5 },
   filterScroll: { flexGrow: 0, marginBottom: 8 },
   filterRow: { paddingHorizontal: 16, paddingBottom: 4, gap: 8, flexDirection: 'row', alignItems: 'center' },
