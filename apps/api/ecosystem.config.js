@@ -4,7 +4,6 @@ module.exports = {
       name: 'takenotes-api',
       script: 'dist/index.js',
       cwd: '/root/TakeNotes/apps/api',
-      node_args: '--env-file=/root/TakeNotes/apps/api/.env',
       instances: 1,
       autorestart: true,
       watch: false,

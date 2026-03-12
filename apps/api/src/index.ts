@@ -1,3 +1,6 @@
+// Load .env file before anything else (must be first import)
+import 'dotenv/config'
+
 // Initialize Sentry before any other imports so all errors are captured
 import { initSentry } from './lib/sentry'
 initSentry()
