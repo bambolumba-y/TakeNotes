@@ -38,6 +38,7 @@ root/
 ## Quick Start
 
 > **Running on a VPS?** Skip to [VPS Deployment](#vps-deployment) below.
+> **Need domain + config setup?** See the [VPS Setup Guide](./docs/vps-setup.md) — covers domain DNS, Supabase, Resend, Telegram, Expo, and Sentry.
 
 ### Prerequisites (Local Development)
 
@@ -229,6 +230,7 @@ Complete project documentation is in the `docs/` directory:
 | [API Reference](./docs/api.md) | Endpoint specifications, request/response schemas |
 | [Operations Guide](./docs/operations.md) | Monitoring, queue management, incident response |
 | [Security Guide](./docs/security.md) | Row-level security, auth, secret management, threat model |
+| [VPS Setup Guide](./docs/vps-setup.md) | Domain DNS, all config values, firewall, Telegram webhook |
 
 ## Project Status
 
