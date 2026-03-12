@@ -5,12 +5,32 @@
   "build": {
     "development": {
       "developmentClient": true,
-      "distribution": "internal"
+      "distribution": "internal",
+      "android": {
+        "buildType": "apk"
+      }
     },
     "preview": {
-      "distribution": "internal"
+      "distribution": "internal",
+      "android": {
+        "buildType": "apk"
+      },
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://api.yisscraft.ru",
+        "EXPO_PUBLIC_SUPABASE_URL": "FILL_IN",
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "FILL_IN"
+      }
     },
-    "production": {}
+    "production": {
+      "android": {
+        "buildType": "apk"
+      },
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://api.yisscraft.ru",
+        "EXPO_PUBLIC_SUPABASE_URL": "FILL_IN",
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "FILL_IN"
+      }
+    }
   },
   "submit": {
     "production": {}

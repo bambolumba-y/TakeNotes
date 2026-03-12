@@ -7,14 +7,14 @@
     "platforms": ["ios", "android"],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.yourorg.takenotes"
+      "bundleIdentifier": "com.yisscraft.takenotes"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/icon.png",
         "backgroundColor": "#5B7CFA"
       },
-      "package": "com.yourorg.takenotes"
+      "package": "com.yisscraft.takenotes"
     },
     "plugins": [
       "expo-router",
