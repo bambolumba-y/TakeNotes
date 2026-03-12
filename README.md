@@ -37,9 +37,9 @@ root/
 
 ## Quick Start
 
-### Prerequisites
+> **Running on a VPS?** Skip to [VPS Deployment](#vps-deployment) below.
 
-Before beginning, ensure you have:
+### Prerequisites (Local Development)
 
 - **Node.js** 20.x LTS or later
 - **pnpm** 9.x or later
@@ -50,7 +50,7 @@ Before beginning, ensure you have:
 ### 1. Clone and Install
 
 ```bash
-git clone <repository-url>
+git clone https://github.com/bambolumba-y/TakeNotes.git
 cd TakeNotes
 pnpm install
 ```
@@ -186,7 +186,7 @@ pnpm lint
 # Run tests
 pnpm test
 
-# Clean build artifacts
+# Clean build artifacts (Linux/macOS)
 rm -rf apps/*/dist apps/*/.expo
 ```
 
@@ -245,6 +245,172 @@ All 8 phases of development are complete:
 - **Phase 8**: Sentry monitoring, structured logging, security hardening, test expansion, EAS build configuration, production readiness
 
 The app is ready for beta testing and App Store/Play Store submission.
+
+---
+
+## VPS Deployment
+
+This section covers deploying the **API + Redis** on a Linux VPS (Ubuntu/Debian). The mobile app is distributed via Expo — it does not run on the server.
+
+### Server Requirements
+
+- Ubuntu 22.04 LTS or Debian 12 (recommended)
+- 1 GB RAM minimum (2 GB recommended)
+- 20 GB disk
+- Open ports: `22` (SSH), `80` (HTTP), `443` (HTTPS), `3000` (API, or proxy it)
+
+### 1. Install Node.js 20
+
+```bash
+curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+sudo apt-get install -y nodejs
+node -v   # should print v20.x.x
+```
+
+### 2. Install pnpm
+
+```bash
+npm install -g pnpm
+pnpm -v
+```
+
+### 3. Install Redis
+
+```bash
+sudo apt-get install -y redis-server
+sudo systemctl enable redis-server
+sudo systemctl start redis-server
+redis-cli ping   # should print PONG
+```
+
+Redis listens on `127.0.0.1:6379` by default (no external exposure needed).
+
+### 4. Clone the repo
+
+```bash
+git clone https://github.com/bambolumba-y/TakeNotes.git
+cd TakeNotes
+pnpm install --frozen-lockfile
+```
+
+### 5. Configure environment
+
+```bash
+cp apps/api/.env.example apps/api/.env
+nano apps/api/.env
+```
+
+Fill in all values. Required at minimum:
+
+```env
+NODE_ENV=production
+PORT=3000
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_ANON_KEY=your-anon-key
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+REDIS_URL=redis://127.0.0.1:6379
+RESEND_API_KEY=re_...
+RESEND_FROM_EMAIL=noreply@yourdomain.com
+TELEGRAM_BOT_TOKEN=
+TELEGRAM_WEBHOOK_SECRET=
+EXPO_ACCESS_TOKEN=
+APP_DEEP_LINK_BASE=takenotes://
+SENTRY_DSN=
+LOG_LEVEL=info
+```
+
+### 6. Build and run the API
+
+```bash
+cd apps/api
+pnpm build          # compiles TypeScript → dist/
+pnpm start:prod     # node dist/index.js
+```
+
+To keep the process alive, use **PM2**:
+
+```bash
+npm install -g pm2
+pm2 start dist/index.js --name takenotes-api --cwd apps/api
+pm2 save
+pm2 startup        # follow the printed command to enable on boot
+```
+
+Monitor logs:
+
+```bash
+pm2 logs takenotes-api
+pm2 status
+```
+
+### 7. (Optional) Reverse proxy with Nginx + HTTPS
+
+```bash
+sudo apt-get install -y nginx certbot python3-certbot-nginx
+```
+
+Create `/etc/nginx/sites-available/takenotes`:
+
+```nginx
+server {
+    listen 80;
+    server_name api.yourdomain.com;
+
+    location / {
+        proxy_pass http://127.0.0.1:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_cache_bypass $http_upgrade;
+    }
+}
+```
+
+```bash
+sudo ln -s /etc/nginx/sites-available/takenotes /etc/nginx/sites-enabled/
+sudo nginx -t
+sudo systemctl reload nginx
+sudo certbot --nginx -d api.yourdomain.com
+```
+
+After this your API is reachable at `https://api.yourdomain.com`.
+
+### 8. Point the mobile app at the VPS
+
+In `apps/mobile/.env`, set:
+
+```env
+EXPO_PUBLIC_API_URL=https://api.yourdomain.com
+```
+
+Then rebuild the mobile app with EAS:
+
+```bash
+cd apps/mobile
+npx eas build --profile production --platform all
+```
+
+### 9. Telegram webhook (if using Telegram delivery)
+
+```bash
+curl -X POST "https://api.telegram.org/bot<YOUR_BOT_TOKEN>/setWebhook" \
+  -d "url=https://api.yourdomain.com/integrations/telegram/webhook" \
+  -d "secret_token=<YOUR_TELEGRAM_WEBHOOK_SECRET>"
+```
+
+### Updating the server
+
+```bash
+cd TakeNotes
+git pull
+pnpm install --frozen-lockfile
+cd apps/api && pnpm build
+pm2 restart takenotes-api
+```
+
+---
 
 ## Getting Help
 
