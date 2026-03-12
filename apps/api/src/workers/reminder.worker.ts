@@ -128,7 +128,8 @@ export function startReminderWorker() {
     'reminder-delivery',
     processJob,
     {
-      connection: redis,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      connection: redis as any,
       concurrency: 5,
     },
   )

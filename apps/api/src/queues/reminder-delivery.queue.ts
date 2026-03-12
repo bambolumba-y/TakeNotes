@@ -10,7 +10,8 @@ export interface ReminderDeliveryJobData {
 }
 
 export const reminderDeliveryQueue = new Queue<ReminderDeliveryJobData>('reminder-delivery', {
-  connection: redis,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  connection: redis as any,
   defaultJobOptions: {
     attempts: 3,
     backoff: { type: 'exponential', delay: 5000 },

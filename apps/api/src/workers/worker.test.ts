@@ -280,7 +280,7 @@ describe('Worker — job record superseded guard', () => {
   it('skips execution when job record status is not scheduled', () => {
     // If the job record was already marked superseded (e.g., reminder was snoozed
     // and a new job was created), the worker should not process this stale BullMQ job.
-    const jobRecordStatus = 'superseded'
+    const jobRecordStatus: string = 'superseded'
     const shouldSkip = jobRecordStatus !== 'scheduled'
     expect(shouldSkip).toBe(true)
   })
