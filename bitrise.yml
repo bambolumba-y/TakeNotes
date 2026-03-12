@@ -1,0 +1,64 @@
+format_version: "13"
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+
+app:
+  envs:
+    - ANDROID_BUILD_TOOLS_VERSION: "34.0.0"
+
+workflows:
+  android-apk:
+    title: Build Android APK
+    steps:
+      - activate-ssh-key@4: {}
+
+      - git-clone@8: {}
+
+      - script@1:
+          title: Install pnpm
+          inputs:
+            - content: |
+                #!/usr/bin/env bash
+                set -euo pipefail
+                npm install -g pnpm@9
+                pnpm --version
+
+      - script@1:
+          title: Install dependencies
+          inputs:
+            - content: |
+                #!/usr/bin/env bash
+                set -euo pipefail
+                pnpm install --frozen-lockfile
+
+      - script@1:
+          title: Build shared package
+          inputs:
+            - content: |
+                #!/usr/bin/env bash
+                set -euo pipefail
+                pnpm --filter @takenotes/shared build
+
+      - script@1:
+          title: Expo prebuild
+          inputs:
+            - content: |
+                #!/usr/bin/env bash
+                set -euo pipefail
+                cd apps/mobile
+                npx expo prebuild --platform android --clean
+          envs:
+            - EXPO_PUBLIC_API_URL: "https://api.yisscraft.ru"
+            - EXPO_PUBLIC_TELEGRAM_BOT_USERNAME: "takenotess_bot"
+
+      - android-build@1:
+          title: Gradle assembleRelease
+          inputs:
+            - project_location: apps/mobile/android
+            - module: app
+            - variant: release
+            - build_type: apk
+
+      - deploy-to-bitrise-io@2:
+          title: Upload APK
+          inputs:
+            - deploy_path: apps/mobile/android/app/build/outputs/apk/release/app-release.apk
