@@ -4,33 +4,37 @@
     "slug": "takenotes",
     "version": "1.0.0",
     "scheme": "takenotes",
+    "owner": "bambolumba",
     "platforms": ["ios", "android"],
+    "icon": "./assets/icon.png",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0B1020"
+    },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.yisscraft.takenotes"
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/icon.png",
+        "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#5B7CFA"
       },
       "package": "com.yisscraft.takenotes"
     },
-    "plugins": [
-      "expo-router",
-      [
-        "sentry-expo",
-        {
-          "organization": "",
-          "project": "takenotes"
-        }
-      ]
-    ],
+    "plugins": ["expo-router"],
     "experiments": {
       "typedRoutes": true
     },
     "extra": {
-      "sentryDsn": ""
+      "sentryDsn": "",
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "d843666f-f131-4b4f-8e70-f9338c794e9a"
+      }
     }
   }
 }
