@@ -1,0 +1,16 @@
+{
+  "compilerOptions": {
+    "strict": true,
+    "noImplicitAny": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "jsx": "react-native",
+    "paths": {
+      "@takenotes/shared": ["./packages/shared/src/index.ts"],
+      "@takenotes/shared/*": ["./packages/shared/src/*"]
+    }
+  }
+}

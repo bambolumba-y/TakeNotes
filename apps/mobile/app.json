@@ -1,0 +1,36 @@
+{
+  "expo": {
+    "name": "TakeNotes",
+    "slug": "takenotes",
+    "version": "1.0.0",
+    "scheme": "takenotes",
+    "platforms": ["ios", "android"],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.yourorg.takenotes"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/icon.png",
+        "backgroundColor": "#5B7CFA"
+      },
+      "package": "com.yourorg.takenotes"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "sentry-expo",
+        {
+          "organization": "",
+          "project": "takenotes"
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "extra": {
+      "sentryDsn": ""
+    }
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ls \"C:\\\\Users\\\\bambolumba\\\\Desktop\\\\TakeNotes\\\\apps\\\\api\\\\src\\\\modules\\\\reminders\\\\\" 2>/dev/null || echo \"directory does not exist yet\")"
+    ]
+  }
+}
