@@ -51,6 +51,8 @@ workflows:
           envs:
             - EXPO_PUBLIC_API_URL: "https://api.yisscraft.ru"
             - EXPO_PUBLIC_TELEGRAM_BOT_USERNAME: "takenotess_bot"
+            - EXPO_PUBLIC_SUPABASE_URL: "$EXPO_PUBLIC_SUPABASE_URL"
+            - EXPO_PUBLIC_SUPABASE_ANON_KEY: "$EXPO_PUBLIC_SUPABASE_ANON_KEY"
 
       - android-build@1:
           title: Gradle assembleRelease
@@ -59,6 +61,11 @@ workflows:
             - module: app
             - variant: release
             - build_type: apk
+          envs:
+            - EXPO_PUBLIC_API_URL: "https://api.yisscraft.ru"
+            - EXPO_PUBLIC_TELEGRAM_BOT_USERNAME: "takenotess_bot"
+            - EXPO_PUBLIC_SUPABASE_URL: "$EXPO_PUBLIC_SUPABASE_URL"
+            - EXPO_PUBLIC_SUPABASE_ANON_KEY: "$EXPO_PUBLIC_SUPABASE_ANON_KEY"
 
       - deploy-to-bitrise-io@2:
           title: Upload APK
