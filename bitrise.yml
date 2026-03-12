@@ -51,8 +51,8 @@ workflows:
           envs:
             - EXPO_PUBLIC_API_URL: "https://api.yisscraft.ru"
             - EXPO_PUBLIC_TELEGRAM_BOT_USERNAME: "takenotess_bot"
-            - EXPO_PUBLIC_SUPABASE_URL: "$EXPO_PUBLIC_SUPABASE_URL"
-            - EXPO_PUBLIC_SUPABASE_ANON_KEY: "$EXPO_PUBLIC_SUPABASE_ANON_KEY"
+            - EXPO_PUBLIC_SUPABASE_URL: "https://yqbauhgehjozggrngion.supabase.co"
+            - EXPO_PUBLIC_SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlxYmF1aGdlaGpvemdncm5naW9uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMyNjExODQsImV4cCI6MjA4ODgzNzE4NH0.RfgHx9yAISfbqtMUpLIkMHJZnly9PrFVIbp1vG8JaYw"
 
       - android-build@1:
           title: Gradle assembleRelease
@@ -64,8 +64,8 @@ workflows:
           envs:
             - EXPO_PUBLIC_API_URL: "https://api.yisscraft.ru"
             - EXPO_PUBLIC_TELEGRAM_BOT_USERNAME: "takenotess_bot"
-            - EXPO_PUBLIC_SUPABASE_URL: "$EXPO_PUBLIC_SUPABASE_URL"
-            - EXPO_PUBLIC_SUPABASE_ANON_KEY: "$EXPO_PUBLIC_SUPABASE_ANON_KEY"
+            - EXPO_PUBLIC_SUPABASE_URL: "https://yqbauhgehjozggrngion.supabase.co"
+            - EXPO_PUBLIC_SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlxYmF1aGdlaGpvemdncm5naW9uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMyNjExODQsImV4cCI6MjA4ODgzNzE4NH0.RfgHx9yAISfbqtMUpLIkMHJZnly9PrFVIbp1vG8JaYw"
 
       - deploy-to-bitrise-io@2:
           title: Upload APK
