@@ -173,20 +173,19 @@ function EditModal({
   )
 }
 
-// ─── Appearance options ───────────────────────────────────────────────────────
-const APPEARANCE_OPTIONS: { label: string; value: ThemeMode }[] = [
-  { label: 'System', value: ThemeMode.System },
-  { label: 'Light', value: ThemeMode.Light },
-  { label: 'Dark', value: ThemeMode.Dark },
-]
-
 // ─── Telegram state type ──────────────────────────────────────────────────────
-type TelegramLinkState = 'idle' | 'connecting' | 'waiting' | 'connected'
+type TelegramLinkState = 'idle' | 'connecting' | 'waiting' | 'connected' | 'error'
 
 // ─── Main screen ─────────────────────────────────────────────────────────────
 export default function SettingsScreen() {
   const theme = useTheme()
   const { t, locale, setLocale } = useI18n()
+
+  const APPEARANCE_OPTIONS: { label: string; value: ThemeMode }[] = [
+    { label: t('system'), value: ThemeMode.System },
+    { label: t('light'), value: ThemeMode.Light },
+    { label: t('dark'), value: ThemeMode.Dark },
+  ]
   const signOut = useAuthStore((s) => s.signOut)
   const profile = useProfileStore((s) => s.profile)
   const updateProfile = useProfileStore((s) => s.update)
@@ -344,7 +343,7 @@ export default function SettingsScreen() {
       startTelegramPoll()
     } catch {
       setConnectError('Failed to start connection. Check your internet and try again.')
-      setTelegramLinkState('idle')
+      setTelegramLinkState('error')
     }
   }
 
@@ -370,21 +369,21 @@ export default function SettingsScreen() {
 
   const telegramValueLabel =
     telegramLinkState === 'connected'
-      ? `@${telegramStatus?.connection?.username ?? 'Connected'}`
+      ? `@${telegramStatus?.connection?.username ?? t('connected')}`
       : telegramLinkState === 'waiting'
-      ? 'Waiting for verification...'
+      ? t('waitingForVerification')
       : telegramLinkState === 'connecting'
-      ? 'Connecting...'
-      : 'Not connected'
+      ? t('connecting')
+      : t('notConnected')
 
   const pushLabel =
     permissionStatus === 'granted'
       ? token
-        ? 'Active'
-        : 'Registered'
+        ? t('active')
+        : t('registered')
       : permissionStatus === 'denied'
-      ? 'Permission denied'
-      : 'Not enabled'
+      ? t('permissionDenied')
+      : t('notEnabled')
 
   const currentLocaleLabel = LOCALE_OPTIONS.find((o) => o.value === locale)?.label ?? locale
 
@@ -417,9 +416,9 @@ export default function SettingsScreen() {
         </Section>
 
         {/* Notification channels */}
-        <Section title="Notification Channels">
+        <Section title={t('notificationChannels')}>
           <SettingsRow
-            label="Push Notifications"
+            label={t('pushNotifications')}
             value={pushLabel}
             onPress={permissionStatus !== 'granted' ? registerForPush : undefined}
             trailing={
@@ -432,12 +431,12 @@ export default function SettingsScreen() {
           />
           <SettingsRow label={t('email')} value={profile?.email ?? '—'} />
           <SettingsRow
-            label="Telegram"
+            label={t('telegram')}
             value={telegramValueLabel}
             onPress={
               telegramLinkState === 'connected'
                 ? handleTelegramDisconnect
-                : telegramLinkState === 'idle'
+                : telegramLinkState === 'idle' || telegramLinkState === 'error'
                 ? handleTelegramConnect
                 : undefined
             }
@@ -467,7 +466,7 @@ export default function SettingsScreen() {
             ]}
           >
             <Text style={[theme.typography.bodyStrong, { color: theme.colors.text.primary, marginBottom: 8 }]}>
-              Connect Telegram
+              {t('connectTelegram')}
             </Text>
             <Text style={[theme.typography.body, { color: theme.colors.text.secondary, marginBottom: 12 }]}>
               Open Telegram and send the following command to{' '}
@@ -492,7 +491,7 @@ export default function SettingsScreen() {
               </Text>
             </View>
             <Text style={[theme.typography.caption, { color: theme.colors.text.tertiary, marginTop: 8 }]}>
-              Waiting for verification...
+              {t('waitingForVerification')}
             </Text>
             {connectError ? (
               <Text style={[theme.typography.caption, { color: theme.colors.status.error, marginTop: 4 }]}>
@@ -515,9 +514,18 @@ export default function SettingsScreen() {
               }}
             >
               <Text style={[theme.typography.caption, { color: theme.colors.text.tertiary }]}>
-                Cancel
+                {t('cancel')}
               </Text>
             </TouchableOpacity>
+          </View>
+        ) : null}
+
+        {/* Telegram connection error — visible regardless of state */}
+        {connectError && telegramLinkState !== 'waiting' ? (
+          <View style={{ marginHorizontal: 16, marginBottom: 12 }}>
+            <Text style={[theme.typography.caption, { color: theme.colors.status.error }]}>
+              {connectError}
+            </Text>
           </View>
         ) : null}
 
@@ -547,7 +555,7 @@ export default function SettingsScreen() {
         </Section>
 
         <Section title={t('about')}>
-          <SettingsRow label="TakeNotes" value="v1.0.0" />
+          <SettingsRow label="TakeNotes" value={`${t('version')} 1.0.0`} />
         </Section>
       </ScrollView>
 
@@ -565,7 +573,7 @@ export default function SettingsScreen() {
       {/* Email modal */}
       <EditModal
         visible={emailModal}
-        title="Change Email"
+        title={t('changeEmail')}
         initialValue={profile?.email ?? ''}
         placeholder="new@example.com"
         hint={emailHint || undefined}

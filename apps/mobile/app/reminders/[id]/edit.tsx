@@ -7,10 +7,11 @@ import {
   TouchableOpacity,
   Alert,
   Platform,
+  ActivityIndicator,
 } from 'react-native'
 import DateTimePicker, { type DateTimePickerEvent } from '@react-native-community/datetimepicker'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { router } from 'expo-router'
+import { useLocalSearchParams, router } from 'expo-router'
 import { useForm, Controller } from 'react-hook-form'
 import { ReminderPriority, ReminderChannel, RecurrenceType } from '@takenotes/shared'
 import { useTheme } from '@/theme/useTheme'
@@ -22,10 +23,27 @@ import { Button } from '@/components/ui/Button'
 import type { Folder, ThemeEntity } from '@takenotes/shared'
 import { useI18n } from '@/lib/i18n'
 
+const PRIORITY_OPTIONS = [
+  { value: ReminderPriority.Low, label: 'Low', color: '#12B76A' },
+  { value: ReminderPriority.Medium, label: 'Medium', color: '#F79009' },
+  { value: ReminderPriority.High, label: 'High', color: '#FB923C' },
+  { value: ReminderPriority.Urgent, label: 'Urgent', color: '#F04438' },
+]
 
-/**
- * Format a Date as a readable date string: "Mon, Mar 12 2026"
- */
+const CHANNEL_OPTIONS = [
+  { value: ReminderChannel.Push, label: 'Push', icon: '🔔' },
+  { value: ReminderChannel.Email, label: 'Email', icon: '✉️' },
+  { value: ReminderChannel.Telegram, label: 'Telegram', icon: '✈️' },
+]
+
+const RECURRENCE_OPTIONS = [
+  { value: RecurrenceType.None, label: 'None' },
+  { value: RecurrenceType.Daily, label: 'Daily' },
+  { value: RecurrenceType.Weekly, label: 'Weekly' },
+  { value: RecurrenceType.Monthly, label: 'Monthly' },
+  { value: RecurrenceType.Yearly, label: 'Yearly' },
+]
+
 function formatDate(date: Date): string {
   return date.toLocaleDateString(undefined, {
     weekday: 'short',
@@ -35,73 +53,76 @@ function formatDate(date: Date): string {
   })
 }
 
-/**
- * Format a Date as HH:MM (24h or locale-default)
- */
 function formatTime(date: Date): string {
   return date.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })
 }
 
-/**
- * Combine the date part of `datePart` with the time part of `timePart` into one Date.
- */
 function combineDateAndTime(datePart: Date, timePart: Date): Date {
   const combined = new Date(datePart)
   combined.setHours(timePart.getHours(), timePart.getMinutes(), 0, 0)
   return combined
 }
 
-export default function NewReminderScreen() {
+export default function EditReminderScreen() {
   const theme = useTheme()
   const { t } = useI18n()
-  const { create } = useRemindersStore()
-
-  const PRIORITY_OPTIONS = [
-    { value: ReminderPriority.Low, label: t('low'), color: '#12B76A' },
-    { value: ReminderPriority.Medium, label: t('medium'), color: '#F79009' },
-    { value: ReminderPriority.High, label: t('high'), color: '#FB923C' },
-    { value: ReminderPriority.Urgent, label: t('urgent'), color: '#F04438' },
-  ]
-
-  const CHANNEL_OPTIONS = [
-    { value: ReminderChannel.Push, label: t('pushOnly'), icon: '🔔' },
-    { value: ReminderChannel.Email, label: t('emailChannel'), icon: '✉️' },
-    { value: ReminderChannel.Telegram, label: t('telegram'), icon: '✈️' },
-  ]
-
-  const RECURRENCE_OPTIONS = [
-    { value: RecurrenceType.None, label: t('none') },
-    { value: RecurrenceType.Daily, label: t('daily') },
-    { value: RecurrenceType.Weekly, label: t('weekly') },
-    { value: RecurrenceType.Monthly, label: t('monthly') },
-    { value: RecurrenceType.Yearly, label: t('yearly') },
-  ]
+  const { id } = useLocalSearchParams<{ id: string }>()
+  const { reminders, update } = useRemindersStore()
   const { folders } = useFoldersStore()
   const { themes } = useThemesStore()
 
-  const [selectedChannels, setSelectedChannels] = useState<ReminderChannel[]>([ReminderChannel.Push])
-  const [selectedPriority, setSelectedPriority] = useState<ReminderPriority>(ReminderPriority.Medium)
-  const [selectedFolder, setSelectedFolder] = useState<string | null>(null)
-  const [selectedThemes, setSelectedThemes] = useState<string[]>([])
-  const [recurrenceType, setRecurrenceType] = useState<RecurrenceType>(RecurrenceType.None)
-  const [saving, setSaving] = useState(false)
+  const existing = reminders.find((r) => r.id === id)
 
-  // Separate date and time state
-  const initialDue = (() => {
+  const initialDue = existing?.dueAt ? new Date(existing.dueAt) : (() => {
     const d = new Date()
     d.setHours(d.getHours() + 1, 0, 0, 0)
     return d
   })()
+
+  const [selectedChannels, setSelectedChannels] = useState<ReminderChannel[]>(
+    existing?.deliveryPolicy?.channels ?? [ReminderChannel.Push],
+  )
+  const [selectedPriority, setSelectedPriority] = useState<ReminderPriority>(
+    existing?.priority ?? ReminderPriority.Medium,
+  )
+  const [selectedFolder, setSelectedFolder] = useState<string | null>(existing?.folderId ?? null)
+  const [selectedThemes, setSelectedThemes] = useState<string[]>(
+    existing?.themes?.map((th) => th.id) ?? [],
+  )
+  const [recurrenceType, setRecurrenceType] = useState<RecurrenceType>(
+    existing?.repeatRule?.type ?? RecurrenceType.None,
+  )
+  const [saving, setSaving] = useState(false)
+
   const [dueDatePart, setDueDatePart] = useState<Date>(initialDue)
   const [dueTimePart, setDueTimePart] = useState<Date>(initialDue)
 
-  // Picker visibility
   const [showDatePicker, setShowDatePicker] = useState(false)
   const [showTimePicker, setShowTimePicker] = useState(false)
 
   const { control, handleSubmit, formState: { errors } } = useForm<{ title: string; description?: string }>({
-    defaultValues: { title: '', description: '' },
+    defaultValues: {
+      title: existing?.title ?? '',
+      description: existing?.description ?? '',
+    },
   })
+
+  if (!existing) {
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.bg.app }]}>
+        <View style={[styles.topBar, { borderBottomColor: theme.colors.border.default }]}>
+          <TouchableOpacity onPress={() => router.back()}>
+            <Text style={[theme.typography.body, { color: theme.colors.accent.primary }]}>{t('back')}</Text>
+          </TouchableOpacity>
+          <Text style={[theme.typography.bodyStrong, { color: theme.colors.text.primary }]}>{t('editReminder')}</Text>
+          <View style={{ width: 60 }} />
+        </View>
+        <View style={styles.centered}>
+          <ActivityIndicator size="large" color={theme.colors.accent.primary} />
+        </View>
+      </SafeAreaView>
+    )
+  }
 
   const toggleChannel = (ch: ReminderChannel) => {
     setSelectedChannels((prev) =>
@@ -114,18 +135,13 @@ export default function NewReminderScreen() {
   }
 
   const onDateChange = (_event: DateTimePickerEvent, selectedDate?: Date) => {
-    // On Android the picker closes automatically; on iOS we close manually
     if (Platform.OS === 'android') setShowDatePicker(false)
-    if (selectedDate) {
-      setDueDatePart(selectedDate)
-    }
+    if (selectedDate) setDueDatePart(selectedDate)
   }
 
   const onTimeChange = (_event: DateTimePickerEvent, selectedDate?: Date) => {
     if (Platform.OS === 'android') setShowTimePicker(false)
-    if (selectedDate) {
-      setDueTimePart(selectedDate)
-    }
+    if (selectedDate) setDueTimePart(selectedDate)
   }
 
   const onSubmit = async (data: { title: string; description?: string }) => {
@@ -136,7 +152,7 @@ export default function NewReminderScreen() {
     }
     setSaving(true)
     try {
-      await create({
+      await update(id, {
         title: data.title,
         description: data.description || undefined,
         dueAt: dueAt.toISOString(),
@@ -149,7 +165,7 @@ export default function NewReminderScreen() {
       })
       router.back()
     } catch (e) {
-      Alert.alert('Error', (e as Error).message || 'Failed to create reminder')
+      Alert.alert('Error', (e as Error).message || 'Failed to update reminder')
     } finally {
       setSaving(false)
     }
@@ -167,7 +183,7 @@ export default function NewReminderScreen() {
         <TouchableOpacity onPress={() => router.back()}>
           <Text style={[theme.typography.body, { color: theme.colors.accent.primary }]}>{t('cancel')}</Text>
         </TouchableOpacity>
-        <Text style={[theme.typography.bodyStrong, { color: theme.colors.text.primary }]}>{t('newReminder')}</Text>
+        <Text style={[theme.typography.bodyStrong, { color: theme.colors.text.primary }]}>{t('editReminder')}</Text>
         <View style={{ width: 60 }} />
       </View>
 
@@ -208,19 +224,9 @@ export default function NewReminderScreen() {
         <View style={styles.section}>
           <SectionLabel text={t('dueDateAndTime').toUpperCase()} />
 
-          {/* Date picker row */}
           <TouchableOpacity
-            style={[
-              styles.pickerRow,
-              {
-                backgroundColor: theme.colors.bg.input,
-                borderColor: theme.colors.border.default,
-              },
-            ]}
-            onPress={() => {
-              setShowTimePicker(false)
-              setShowDatePicker(true)
-            }}
+            style={[styles.pickerRow, { backgroundColor: theme.colors.bg.input, borderColor: theme.colors.border.default }]}
+            onPress={() => { setShowTimePicker(false); setShowDatePicker(true) }}
             activeOpacity={0.75}
           >
             <Text style={[theme.typography.captionStrong, { color: theme.colors.text.secondary }]}>
@@ -231,20 +237,9 @@ export default function NewReminderScreen() {
             </Text>
           </TouchableOpacity>
 
-          {/* Time picker row */}
           <TouchableOpacity
-            style={[
-              styles.pickerRow,
-              {
-                backgroundColor: theme.colors.bg.input,
-                borderColor: theme.colors.border.default,
-                marginTop: 8,
-              },
-            ]}
-            onPress={() => {
-              setShowDatePicker(false)
-              setShowTimePicker(true)
-            }}
+            style={[styles.pickerRow, { backgroundColor: theme.colors.bg.input, borderColor: theme.colors.border.default, marginTop: 8 }]}
+            onPress={() => { setShowDatePicker(false); setShowTimePicker(true) }}
             activeOpacity={0.75}
           >
             <Text style={[theme.typography.captionStrong, { color: theme.colors.text.secondary }]}>
@@ -255,7 +250,6 @@ export default function NewReminderScreen() {
             </Text>
           </TouchableOpacity>
 
-          {/* Native date picker */}
           {showDatePicker && (
             <DateTimePicker
               value={dueDatePart}
@@ -266,18 +260,12 @@ export default function NewReminderScreen() {
               style={{ marginTop: 8 }}
             />
           )}
-
-          {/* Close button for iOS inline date picker */}
           {showDatePicker && Platform.OS === 'ios' && (
-            <TouchableOpacity
-              style={{ alignItems: 'flex-end', paddingVertical: 4 }}
-              onPress={() => setShowDatePicker(false)}
-            >
+            <TouchableOpacity style={{ alignItems: 'flex-end', paddingVertical: 4 }} onPress={() => setShowDatePicker(false)}>
               <Text style={[theme.typography.bodyStrong, { color: theme.colors.accent.primary }]}>{t('done')}</Text>
             </TouchableOpacity>
           )}
 
-          {/* Native time picker */}
           {showTimePicker && (
             <DateTimePicker
               value={dueTimePart}
@@ -288,13 +276,8 @@ export default function NewReminderScreen() {
               style={{ marginTop: 8 }}
             />
           )}
-
-          {/* Close button for iOS spinner time picker */}
           {showTimePicker && Platform.OS === 'ios' && (
-            <TouchableOpacity
-              style={{ alignItems: 'flex-end', paddingVertical: 4 }}
-              onPress={() => setShowTimePicker(false)}
-            >
+            <TouchableOpacity style={{ alignItems: 'flex-end', paddingVertical: 4 }} onPress={() => setShowTimePicker(false)}>
               <Text style={[theme.typography.bodyStrong, { color: theme.colors.accent.primary }]}>{t('done')}</Text>
             </TouchableOpacity>
           )}
@@ -313,21 +296,10 @@ export default function NewReminderScreen() {
               return (
                 <TouchableOpacity
                   key={opt.value}
-                  style={[
-                    styles.chip,
-                    {
-                      borderColor: selected ? opt.color : theme.colors.border.default,
-                      backgroundColor: selected ? opt.color + '20' : 'transparent',
-                    },
-                  ]}
+                  style={[styles.chip, { borderColor: selected ? opt.color : theme.colors.border.default, backgroundColor: selected ? opt.color + '20' : 'transparent' }]}
                   onPress={() => setSelectedPriority(opt.value)}
                 >
-                  <Text
-                    style={[
-                      theme.typography.captionStrong,
-                      { color: selected ? opt.color : theme.colors.text.secondary },
-                    ]}
-                  >
+                  <Text style={[theme.typography.captionStrong, { color: selected ? opt.color : theme.colors.text.secondary }]}>
                     {opt.label}
                   </Text>
                 </TouchableOpacity>
@@ -345,22 +317,11 @@ export default function NewReminderScreen() {
               return (
                 <TouchableOpacity
                   key={ch.value}
-                  style={[
-                    styles.chip,
-                    {
-                      borderColor: selected ? theme.colors.accent.primary : theme.colors.border.default,
-                      backgroundColor: selected ? theme.colors.accent.soft : 'transparent',
-                    },
-                  ]}
+                  style={[styles.chip, { borderColor: selected ? theme.colors.accent.primary : theme.colors.border.default, backgroundColor: selected ? theme.colors.accent.soft : 'transparent' }]}
                   onPress={() => toggleChannel(ch.value)}
                 >
                   <Text style={{ marginRight: 4 }}>{ch.icon}</Text>
-                  <Text
-                    style={[
-                      theme.typography.captionStrong,
-                      { color: selected ? theme.colors.accent.primary : theme.colors.text.secondary },
-                    ]}
-                  >
+                  <Text style={[theme.typography.captionStrong, { color: selected ? theme.colors.accent.primary : theme.colors.text.secondary }]}>
                     {ch.label}
                   </Text>
                 </TouchableOpacity>
@@ -378,21 +339,10 @@ export default function NewReminderScreen() {
               return (
                 <TouchableOpacity
                   key={opt.value}
-                  style={[
-                    styles.chip,
-                    {
-                      borderColor: selected ? theme.colors.accent.primary : theme.colors.border.default,
-                      backgroundColor: selected ? theme.colors.accent.soft : 'transparent',
-                    },
-                  ]}
+                  style={[styles.chip, { borderColor: selected ? theme.colors.accent.primary : theme.colors.border.default, backgroundColor: selected ? theme.colors.accent.soft : 'transparent' }]}
                   onPress={() => setRecurrenceType(opt.value)}
                 >
-                  <Text
-                    style={[
-                      theme.typography.captionStrong,
-                      { color: selected ? theme.colors.accent.primary : theme.colors.text.secondary },
-                    ]}
-                  >
+                  <Text style={[theme.typography.captionStrong, { color: selected ? theme.colors.accent.primary : theme.colors.text.secondary }]}>
                     {opt.label}
                   </Text>
                 </TouchableOpacity>
@@ -407,14 +357,7 @@ export default function NewReminderScreen() {
             <SectionLabel text={t('folder').toUpperCase()} />
             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
               <TouchableOpacity
-                style={[
-                  styles.chip,
-                  {
-                    borderColor: !selectedFolder ? theme.colors.accent.primary : theme.colors.border.default,
-                    backgroundColor: !selectedFolder ? theme.colors.accent.soft : 'transparent',
-                    marginRight: 8,
-                  },
-                ]}
+                style={[styles.chip, { borderColor: !selectedFolder ? theme.colors.accent.primary : theme.colors.border.default, backgroundColor: !selectedFolder ? theme.colors.accent.soft : 'transparent', marginRight: 8 }]}
                 onPress={() => setSelectedFolder(null)}
               >
                 <Text style={[theme.typography.caption, { color: !selectedFolder ? theme.colors.accent.primary : theme.colors.text.secondary }]}>
@@ -424,14 +367,7 @@ export default function NewReminderScreen() {
               {folders.map((f: Folder) => (
                 <TouchableOpacity
                   key={f.id}
-                  style={[
-                    styles.chip,
-                    {
-                      borderColor: selectedFolder === f.id ? f.color : theme.colors.border.default,
-                      backgroundColor: selectedFolder === f.id ? f.color + '20' : 'transparent',
-                      marginRight: 8,
-                    },
-                  ]}
+                  style={[styles.chip, { borderColor: selectedFolder === f.id ? f.color : theme.colors.border.default, backgroundColor: selectedFolder === f.id ? f.color + '20' : 'transparent', marginRight: 8 }]}
                   onPress={() => setSelectedFolder(f.id)}
                 >
                   <Text style={[theme.typography.caption, { color: selectedFolder === f.id ? f.color : theme.colors.text.secondary }]}>
@@ -453,16 +389,10 @@ export default function NewReminderScreen() {
                 return (
                   <TouchableOpacity
                     key={th.id}
-                    style={[
-                      styles.chip,
-                      {
-                        borderColor: selected ? th.color : theme.colors.border.default,
-                        backgroundColor: selected ? th.color + '20' : 'transparent',
-                      },
-                    ]}
+                    style={[styles.chip, { borderColor: selected ? th.color : theme.colors.border.default, backgroundColor: selected ? th.color + '20' : 'transparent' }]}
                     onPress={() =>
                       setSelectedThemes((prev) =>
-                        prev.includes(th.id) ? prev.filter((id) => id !== th.id) : [...prev, th.id],
+                        prev.includes(th.id) ? prev.filter((tid) => tid !== th.id) : [...prev, th.id],
                       )
                     }
                   >
@@ -477,7 +407,7 @@ export default function NewReminderScreen() {
         )}
 
         <View style={{ marginTop: 8 }}>
-          <Button label={t('createReminder')} onPress={handleSubmit(onSubmit)} loading={saving} />
+          <Button label={t('save')} onPress={handleSubmit(onSubmit)} loading={saving} />
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -514,4 +444,5 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     paddingHorizontal: 16,
   },
+  centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
 })

@@ -17,15 +17,10 @@ import { useRemindersStore } from '@/store/reminders'
 import { useFoldersStore } from '@/store/folders'
 import { SearchInput } from '@/components/SearchInput'
 import { useDebounce } from '@/hooks/useDebounce'
+import { useI18n } from '@/lib/i18n'
 
 type FilterTab = 'all' | 'notes' | 'reminders'
 type DateRange = 'all' | 'last7' | 'last30'
-
-const DATE_RANGE_OPTIONS: { value: DateRange; label: string }[] = [
-  { value: 'all', label: 'All time' },
-  { value: 'last7', label: 'Last 7 days' },
-  { value: 'last30', label: 'Last 30 days' },
-]
 
 function getDateRangeCutoff(range: DateRange): Date | null {
   if (range === 'all') return null
@@ -37,6 +32,13 @@ function getDateRangeCutoff(range: DateRange): Date | null {
 
 export default function ArchiveScreen() {
   const theme = useTheme()
+  const { t } = useI18n()
+
+  const DATE_RANGE_OPTIONS: { value: DateRange; label: string }[] = [
+    { value: 'all', label: t('allTime') },
+    { value: 'last7', label: t('last7Days') },
+    { value: 'last30', label: t('last30Days') },
+  ]
   const { archivedNotes, isLoading: notesLoading, fetchArchived: fetchArchivedNotes, restore: restoreNote } = useNotesStore()
   const { archivedReminders, isLoading: remindersLoading, fetchArchived: fetchArchivedReminders, restore: restoreReminder } = useRemindersStore()
   const { folders, fetch: fetchFolders } = useFoldersStore()
@@ -62,7 +64,7 @@ export default function ArchiveScreen() {
       await Promise.all([fetchArchivedNotes(), fetchArchivedReminders()])
       setHasEverLoaded(true)
     } catch {
-      setError('Something went wrong')
+      setError(t('somethingWentWrong'))
     }
   }
 
@@ -94,9 +96,9 @@ export default function ArchiveScreen() {
     [...noteItems, ...reminderItems].sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
 
   const FILTER_TABS: { key: FilterTab; label: string }[] = [
-    { key: 'all', label: 'All' },
-    { key: 'notes', label: 'Notes' },
-    { key: 'reminders', label: 'Reminders' },
+    { key: 'all', label: t('all') },
+    { key: 'notes', label: t('notes') },
+    { key: 'reminders', label: t('reminders') },
   ]
 
   const hasActiveFilters = !!debouncedSearch || dateRange !== 'all' || !!selectedFolder
@@ -112,7 +114,7 @@ export default function ArchiveScreen() {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.bg.app }]}>
         <View style={styles.header}>
-          <Text style={[theme.typography.title1, { color: theme.colors.text.primary }]}>Archive</Text>
+          <Text style={[theme.typography.title1, { color: theme.colors.text.primary }]}>{t('archive')}</Text>
         </View>
         <View style={styles.centered}>
           <ActivityIndicator size="large" color={theme.colors.accent.primary} />
@@ -125,18 +127,18 @@ export default function ArchiveScreen() {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.bg.app }]}>
         <View style={styles.header}>
-          <Text style={[theme.typography.title1, { color: theme.colors.text.primary }]}>Archive</Text>
+          <Text style={[theme.typography.title1, { color: theme.colors.text.primary }]}>{t('archive')}</Text>
         </View>
         <View style={styles.centered}>
           <Text style={{ fontSize: 40, marginBottom: 16 }}>⚠️</Text>
           <Text style={[theme.typography.sectionTitle, { color: theme.colors.text.primary, textAlign: 'center' }]}>
-            Something went wrong
+            {t('somethingWentWrong')}
           </Text>
           <TouchableOpacity
             style={[styles.ctaButton, { backgroundColor: theme.colors.accent.soft, marginTop: 16 }]}
             onPress={loadArchive}
           >
-            <Text style={[theme.typography.bodyStrong, { color: theme.colors.accent.primary }]}>Try again</Text>
+            <Text style={[theme.typography.bodyStrong, { color: theme.colors.accent.primary }]}>{t('tryAgain')}</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -146,10 +148,10 @@ export default function ArchiveScreen() {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.bg.app }]}>
       <View style={styles.header}>
-        <Text style={[theme.typography.title1, { color: theme.colors.text.primary }]}>Archive</Text>
+        <Text style={[theme.typography.title1, { color: theme.colors.text.primary }]}>{t('archive')}</Text>
       </View>
 
-      <SearchInput value={search} onChangeText={setSearch} placeholder="Search archived..." />
+      <SearchInput value={search} onChangeText={setSearch} placeholder={t('searchArchive')} />
 
       {/* Type filter chips */}
       <View style={styles.filterRow}>
@@ -247,34 +249,28 @@ export default function ArchiveScreen() {
         <View style={styles.centered}>
           <Text style={{ fontSize: 40, marginBottom: 16 }}>🔍</Text>
           <Text style={[theme.typography.sectionTitle, { color: theme.colors.text.primary, textAlign: 'center' }]}>
-            No results for your search
+            {t('noResults')}
           </Text>
           <Text style={[theme.typography.body, { color: theme.colors.text.secondary, textAlign: 'center', marginTop: 8 }]}>
-            Try adjusting your filters
+            {t('tryAdjustingFilters')}
           </Text>
           <TouchableOpacity
             style={[styles.ctaButton, { backgroundColor: theme.colors.accent.soft, marginTop: 16 }]}
             onPress={clearFilters}
           >
-            <Text style={[theme.typography.bodyStrong, { color: theme.colors.accent.primary }]}>Clear filters</Text>
+            <Text style={[theme.typography.bodyStrong, { color: theme.colors.accent.primary }]}>{t('clearFilters')}</Text>
           </TouchableOpacity>
         </View>
       ) : items.length === 0 && !isLoading ? (
         <View style={styles.centered}>
           <Text style={{ fontSize: 48, marginBottom: 16 }}>📦</Text>
           <Text style={[theme.typography.sectionTitle, { color: theme.colors.text.primary, textAlign: 'center' }]}>
-            {filter === 'notes' ? 'No archived notes' :
-             filter === 'reminders' ? 'No completed reminders' :
-             'Archive is empty'}
+            {t('archiveEmpty')}
           </Text>
           <Text
             style={[theme.typography.body, { color: theme.colors.text.secondary, textAlign: 'center', marginTop: 8 }]}
           >
-            {filter === 'notes'
-              ? 'Archived notes will appear here'
-              : filter === 'reminders'
-              ? 'Completed reminders will appear here'
-              : 'Completed reminders and archived notes will appear here.'}
+            {t('archiveEmptyBody')}
           </Text>
         </View>
       ) : (
@@ -322,7 +318,7 @@ export default function ArchiveScreen() {
                       },
                     ]}
                   >
-                    {item.itemType === 'note' ? 'NOTE' : 'REMINDER'}
+                    {item.itemType === 'note' ? t('note').toUpperCase() : t('reminder').toUpperCase()}
                   </Text>
                 </View>
                 <Text
@@ -341,7 +337,7 @@ export default function ArchiveScreen() {
                   onPress={() => restoreNote(item.id)}
                 >
                   <Text style={[theme.typography.captionStrong, { color: theme.colors.accent.primary }]}>
-                    Restore
+                    {t('restore')}
                   </Text>
                 </TouchableOpacity>
               )}
@@ -351,7 +347,7 @@ export default function ArchiveScreen() {
                   onPress={() => restoreReminder(item.id)}
                 >
                   <Text style={[theme.typography.captionStrong, { color: theme.colors.text.secondary }]}>
-                    Restore
+                    {t('restore')}
                   </Text>
                 </TouchableOpacity>
               )}

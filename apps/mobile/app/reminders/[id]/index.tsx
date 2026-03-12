@@ -8,6 +8,7 @@ import { remindersService } from '@/services/reminders.service'
 import { Button } from '@/components/ui/Button'
 import type { Reminder } from '@takenotes/shared'
 import { ReminderPriority, ReminderChannel, RecurrenceType } from '@takenotes/shared'
+import { useI18n } from '@/lib/i18n'
 
 const PRIORITY_COLORS_LIGHT: Record<ReminderPriority, string> = {
   [ReminderPriority.Low]: '#12B76A', [ReminderPriority.Medium]: '#F79009',
@@ -15,20 +16,23 @@ const PRIORITY_COLORS_LIGHT: Record<ReminderPriority, string> = {
 }
 const CHANNEL_ICONS: Record<string, string> = { push: '🔔', email: '✉️', telegram: '✈️' }
 
-const SNOOZE_PRESETS = [
-  { label: '5 min', minutes: 5 }, { label: '15 min', minutes: 15 },
-  { label: '30 min', minutes: 30 }, { label: '1 hour', minutes: 60 },
-  { label: '2 hours', minutes: 120 },
-]
-
 export default function ReminderDetailScreen() {
   const theme = useTheme()
+  const { t } = useI18n()
   const { id } = useLocalSearchParams<{ id: string }>()
   const { complete, snooze, cancel } = useRemindersStore()
   const [reminder, setReminder] = useState<Reminder | null>(null)
   const [snoozeModalVisible, setSnoozeModalVisible] = useState(false)
   const [completing, setCompleting] = useState(false)
   const [cancelling, setCancelling] = useState(false)
+
+  const SNOOZE_PRESETS = [
+    { label: t('snooze5min'), minutes: 5 },
+    { label: t('snooze15min'), minutes: 15 },
+    { label: '30 min', minutes: 30 },
+    { label: t('snooze1hour'), minutes: 60 },
+    { label: t('snooze3hours'), minutes: 180 },
+  ]
 
   useEffect(() => {
     remindersService.get(id).then(setReminder)
@@ -48,9 +52,9 @@ export default function ReminderDetailScreen() {
   }
 
   const handleCancel = () => {
-    Alert.alert('Cancel reminder', 'This reminder will be cancelled.', [
-      { text: 'Back', style: 'cancel' },
-      { text: 'Cancel Reminder', style: 'destructive', onPress: async () => { await cancel(id); router.back() } },
+    Alert.alert(t('cancelReminder'), 'This reminder will be cancelled.', [
+      { text: t('back'), style: 'cancel' },
+      { text: t('cancelReminder'), style: 'destructive', onPress: async () => { await cancel(id); router.back() } },
     ])
   }
 
@@ -66,7 +70,11 @@ export default function ReminderDetailScreen() {
 
   const recurrenceLabel = () => {
     const r = reminder.repeatRule
-    if (!r || r.type === RecurrenceType.None) return 'Does not repeat'
+    if (!r || r.type === RecurrenceType.None) return t('doNotRepeat')
+    if (r.type === RecurrenceType.Daily) return t('daily')
+    if (r.type === RecurrenceType.Weekly) return t('weekly')
+    if (r.type === RecurrenceType.Monthly) return t('monthly')
+    if (r.type === RecurrenceType.Yearly) return t('yearly')
     return r.type.charAt(0).toUpperCase() + r.type.slice(1)
   }
 
@@ -75,7 +83,7 @@ export default function ReminderDetailScreen() {
       {/* Back */}
       <View style={[styles.topBar, { borderBottomColor: theme.colors.border.default }]}>
         <TouchableOpacity onPress={() => router.back()}>
-          <Text style={[theme.typography.body, { color: theme.colors.accent.primary }]}>← Back</Text>
+          <Text style={[theme.typography.body, { color: theme.colors.accent.primary }]}>← {t('back')}</Text>
         </TouchableOpacity>
         <View style={[styles.priorityBadge, { backgroundColor: priorityColor + '20' }]}>
           <Text style={[theme.typography.micro, { color: priorityColor }]}>{reminder.priority.toUpperCase()}</Text>
@@ -88,7 +96,7 @@ export default function ReminderDetailScreen() {
 
         {/* Due block */}
         <View style={[styles.infoBlock, { backgroundColor: theme.colors.bg.surface, borderColor: isOverdue ? theme.colors.status.warning : theme.colors.border.default }]}>
-          <Text style={[theme.typography.captionStrong, { color: theme.colors.text.tertiary }]}>DUE</Text>
+          <Text style={[theme.typography.captionStrong, { color: theme.colors.text.tertiary }]}>{t('due').toUpperCase()}</Text>
           <Text style={[theme.typography.bodyStrong, { color: isOverdue ? theme.colors.status.warning : theme.colors.text.primary, marginTop: 2 }]}>
             {isOverdue ? '⚠ Overdue · ' : ''}{new Date(reminder.dueAt).toLocaleString()}
           </Text>
@@ -97,7 +105,7 @@ export default function ReminderDetailScreen() {
 
         {/* Repeat block */}
         <View style={[styles.infoBlock, { backgroundColor: theme.colors.bg.surface, borderColor: theme.colors.border.default }]}>
-          <Text style={[theme.typography.captionStrong, { color: theme.colors.text.tertiary }]}>REPEAT</Text>
+          <Text style={[theme.typography.captionStrong, { color: theme.colors.text.tertiary }]}>{t('repeat').toUpperCase()}</Text>
           <Text style={[theme.typography.body, { color: theme.colors.text.primary, marginTop: 2 }]}>{recurrenceLabel()}</Text>
         </View>
 
@@ -110,28 +118,28 @@ export default function ReminderDetailScreen() {
               disabled={completing}
             >
               <Text style={{ fontSize: 22 }}>✅</Text>
-              <Text style={[theme.typography.captionStrong, { color: theme.colors.status.success, marginTop: 6 }]}>Complete</Text>
+              <Text style={[theme.typography.captionStrong, { color: theme.colors.status.success, marginTop: 6 }]}>{t('complete')}</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.actionCard, { backgroundColor: theme.colors.status.warning + '15', borderColor: theme.colors.status.warning }]}
               onPress={() => setSnoozeModalVisible(true)}
             >
               <Text style={{ fontSize: 22 }}>💤</Text>
-              <Text style={[theme.typography.captionStrong, { color: theme.colors.status.warning, marginTop: 6 }]}>Snooze</Text>
+              <Text style={[theme.typography.captionStrong, { color: theme.colors.status.warning, marginTop: 6 }]}>{t('snooze')}</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.actionCard, { backgroundColor: theme.colors.accent.soft, borderColor: theme.colors.accent.primary }]}
               onPress={() => router.push(`/reminders/${id}/edit`)}
             >
               <Text style={{ fontSize: 22 }}>✏️</Text>
-              <Text style={[theme.typography.captionStrong, { color: theme.colors.accent.primary, marginTop: 6 }]}>Edit</Text>
+              <Text style={[theme.typography.captionStrong, { color: theme.colors.accent.primary, marginTop: 6 }]}>{t('edit')}</Text>
             </TouchableOpacity>
           </View>
         )}
 
         {/* Channels */}
         <View style={styles.section}>
-          <Text style={[theme.typography.captionStrong, { color: theme.colors.text.tertiary, marginBottom: 10 }]}>DELIVERY CHANNELS</Text>
+          <Text style={[theme.typography.captionStrong, { color: theme.colors.text.tertiary, marginBottom: 10 }]}>{t('deliveryChannels').toUpperCase()}</Text>
           <View style={styles.channelsRow}>
             {(['push', 'email', 'telegram'] as const).map((ch) => {
               const isSelected = reminder.deliveryPolicy.channels.includes(ch as ReminderChannel)
@@ -156,7 +164,7 @@ export default function ReminderDetailScreen() {
         {/* Description */}
         {reminder.description ? (
           <View style={styles.section}>
-            <Text style={[theme.typography.captionStrong, { color: theme.colors.text.tertiary, marginBottom: 8 }]}>DESCRIPTION</Text>
+            <Text style={[theme.typography.captionStrong, { color: theme.colors.text.tertiary, marginBottom: 8 }]}>{t('description').toUpperCase()}</Text>
             <Text style={[theme.typography.body, { color: theme.colors.text.primary, lineHeight: 24 }]}>{reminder.description}</Text>
           </View>
         ) : null}
@@ -164,7 +172,7 @@ export default function ReminderDetailScreen() {
         {/* Destructive */}
         {isActive && (
           <View style={[styles.section, { marginTop: 8 }]}>
-            <Button label="Cancel Reminder" variant="destructive" onPress={handleCancel} />
+            <Button label={t('cancelReminder')} variant="destructive" onPress={handleCancel} />
           </View>
         )}
       </ScrollView>
@@ -173,7 +181,7 @@ export default function ReminderDetailScreen() {
       <Modal visible={snoozeModalVisible} transparent animationType="slide">
         <View style={styles.modalOverlay}>
           <View style={[styles.modalSheet, { backgroundColor: theme.colors.bg.surface }]}>
-            <Text style={[theme.typography.sectionTitle, { color: theme.colors.text.primary, marginBottom: 16 }]}>Snooze until...</Text>
+            <Text style={[theme.typography.sectionTitle, { color: theme.colors.text.primary, marginBottom: 16 }]}>{t('snoozeUntil')}</Text>
             {SNOOZE_PRESETS.map((preset) => (
               <TouchableOpacity
                 key={preset.label}
@@ -184,7 +192,7 @@ export default function ReminderDetailScreen() {
               </TouchableOpacity>
             ))}
             <TouchableOpacity style={styles.snoozeOption} onPress={() => setSnoozeModalVisible(false)}>
-              <Text style={[theme.typography.body, { color: theme.colors.status.error }]}>Cancel</Text>
+              <Text style={[theme.typography.body, { color: theme.colors.status.error }]}>{t('cancel')}</Text>
             </TouchableOpacity>
           </View>
         </View>

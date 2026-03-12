@@ -95,7 +95,7 @@ function RootLayoutInner() {
     }
 
     // Guard: if authenticated and on an empty/root path, redirect to notes
-    if (session && !inTabsGroup && !inAuthGroup) {
+    if (session && !inTabsGroup && !inAuthGroup && segments.length === 0) {
       router.replace('/(tabs)/notes')
     }
   }, [session, isLoading, segments, pathname])

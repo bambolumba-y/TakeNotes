@@ -19,26 +19,28 @@ import { remindersService } from '@/services/reminders.service'
 import { ReminderCard } from '@/components/ReminderCard'
 import { SearchInput } from '@/components/SearchInput'
 import { useDebounce } from '@/hooks/useDebounce'
+import { useI18n } from '@/lib/i18n'
 
 type Tab = { key: 'active' | 'today' | 'upcoming' | 'overdue'; label: string }
-const TABS: Tab[] = [
-  { key: 'active', label: 'Active' },
-  { key: 'today', label: 'Today' },
-  { key: 'upcoming', label: 'Upcoming' },
-  { key: 'overdue', label: 'Overdue' },
-]
-
-const EMPTY_MESSAGES: Record<string, { icon: string; title: string; body: string }> = {
-  active: { icon: '🔔', title: 'No active reminders', body: 'Tap + to create a reminder' },
-  today: { icon: '📅', title: 'Nothing due today', body: 'You have no reminders scheduled for today' },
-  upcoming: { icon: '🗓️', title: 'No upcoming reminders', body: 'Create a reminder with a future due date' },
-  overdue: { icon: '✅', title: 'Nothing overdue', body: 'Great job — you\'re all caught up!' },
-}
-
 type SortOption = 'due_at' | 'updated_at'
 
 export default function RemindersScreen() {
   const theme = useTheme()
+  const { t } = useI18n()
+
+  const TABS: Tab[] = [
+    { key: 'active', label: t('active') },
+    { key: 'today', label: t('today') },
+    { key: 'upcoming', label: t('upcoming') },
+    { key: 'overdue', label: t('overdue') },
+  ]
+
+  const EMPTY_MESSAGES: Record<string, { icon: string; title: string; body: string }> = {
+    active: { icon: '🔔', title: t('noRemindersYet'), body: t('noRemindersYetBody') },
+    today: { icon: '📅', title: t('noRemindersYet'), body: t('noRemindersYetBody') },
+    upcoming: { icon: '🗓️', title: t('noRemindersYet'), body: t('noRemindersYetBody') },
+    overdue: { icon: '✅', title: t('noRemindersYet'), body: t('noRemindersYetBody') },
+  }
   const { reminders, isLoading, activeView, setView } = useRemindersStore()
   const { folders, fetch: fetchFolders } = useFoldersStore()
   const { themes, fetch: fetchThemes } = useThemesStore()
@@ -81,7 +83,7 @@ export default function RemindersScreen() {
       useRemindersStore.setState({ reminders: data, isLoading: false })
       setHasEverLoaded(true)
     } catch {
-      setError('Something went wrong')
+      setError(t('somethingWentWrong'))
       useRemindersStore.setState({ isLoading: false })
     }
   }
@@ -113,7 +115,7 @@ export default function RemindersScreen() {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.bg.app }]}>
         <View style={styles.header}>
-          <Text style={[theme.typography.title1, { color: theme.colors.text.primary }]}>Reminders</Text>
+          <Text style={[theme.typography.title1, { color: theme.colors.text.primary }]}>{t('reminders')}</Text>
         </View>
         <View style={styles.centered}>
           <ActivityIndicator size="large" color={theme.colors.accent.primary} />
@@ -126,18 +128,18 @@ export default function RemindersScreen() {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.bg.app }]}>
         <View style={styles.header}>
-          <Text style={[theme.typography.title1, { color: theme.colors.text.primary }]}>Reminders</Text>
+          <Text style={[theme.typography.title1, { color: theme.colors.text.primary }]}>{t('reminders')}</Text>
         </View>
         <View style={styles.centered}>
           <Text style={{ fontSize: 40, marginBottom: 16 }}>⚠️</Text>
           <Text style={[theme.typography.sectionTitle, { color: theme.colors.text.primary, textAlign: 'center' }]}>
-            Something went wrong
+            {t('somethingWentWrong')}
           </Text>
           <TouchableOpacity
             style={[styles.ctaButton, { backgroundColor: theme.colors.accent.soft, marginTop: 16 }]}
             onPress={() => loadReminders()}
           >
-            <Text style={[theme.typography.bodyStrong, { color: theme.colors.accent.primary }]}>Try again</Text>
+            <Text style={[theme.typography.bodyStrong, { color: theme.colors.accent.primary }]}>{t('tryAgain')}</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -147,7 +149,7 @@ export default function RemindersScreen() {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.bg.app }]}>
       <View style={styles.header}>
-        <Text style={[theme.typography.title1, { color: theme.colors.text.primary }]}>Reminders</Text>
+        <Text style={[theme.typography.title1, { color: theme.colors.text.primary }]}>{t('reminders')}</Text>
       </View>
 
       {/* Subtabs */}
@@ -180,7 +182,7 @@ export default function RemindersScreen() {
         })}
       </View>
 
-      <SearchInput value={search} onChangeText={setSearch} placeholder="Search reminders..." />
+      <SearchInput value={search} onChangeText={setSearch} placeholder={t('searchReminders')} />
 
       {/* Sort + Folder + Theme filter row */}
       <ScrollView
@@ -191,7 +193,7 @@ export default function RemindersScreen() {
       >
         {/* Sort */}
         {(['due_at', 'updated_at'] as SortOption[]).map((s) => {
-          const label = s === 'due_at' ? 'Due Date' : 'Updated'
+          const label = s === 'due_at' ? t('sortByDueDate') : t('sortByUpdated')
           const isActive = sort === s
           return (
             <TouchableOpacity
@@ -274,16 +276,16 @@ export default function RemindersScreen() {
         <View style={styles.centered}>
           <Text style={{ fontSize: 40, marginBottom: 16 }}>🔍</Text>
           <Text style={[theme.typography.sectionTitle, { color: theme.colors.text.primary, textAlign: 'center' }]}>
-            No results for your search
+            {t('noResults')}
           </Text>
           <Text style={[theme.typography.body, { color: theme.colors.text.secondary, textAlign: 'center', marginTop: 8 }]}>
-            Try adjusting your filters
+            {t('tryAdjustingFilters')}
           </Text>
           <TouchableOpacity
             style={[styles.ctaButton, { backgroundColor: theme.colors.accent.soft, marginTop: 16 }]}
             onPress={clearFilters}
           >
-            <Text style={[theme.typography.bodyStrong, { color: theme.colors.accent.primary }]}>Clear filters</Text>
+            <Text style={[theme.typography.bodyStrong, { color: theme.colors.accent.primary }]}>{t('clearFilters')}</Text>
           </TouchableOpacity>
         </View>
       ) : reminders.length === 0 && !isLoading ? (
@@ -300,7 +302,7 @@ export default function RemindersScreen() {
               style={[styles.ctaButton, { backgroundColor: theme.colors.accent.soft, marginTop: 20 }]}
               onPress={() => router.push('/reminders/new')}
             >
-              <Text style={[theme.typography.bodyStrong, { color: theme.colors.accent.primary }]}>Create reminder</Text>
+              <Text style={[theme.typography.bodyStrong, { color: theme.colors.accent.primary }]}>{t('createReminder')}</Text>
             </TouchableOpacity>
           )}
         </View>

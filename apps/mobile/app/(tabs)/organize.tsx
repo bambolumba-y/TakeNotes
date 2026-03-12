@@ -22,6 +22,7 @@ import { ColorPicker } from '@/components/ColorPicker'
 import { IconPicker } from '@/components/IconPicker'
 import { FOLDER_COLORS, FOLDER_ICONS } from '@takenotes/shared'
 import type { Folder, ThemeEntity } from '@takenotes/shared'
+import { useI18n } from '@/lib/i18n'
 
 type Tab = 'themes' | 'folders'
 
@@ -34,6 +35,7 @@ const ICON_EMOJI: Record<string, string> = {
 
 export default function OrganizeScreen() {
   const theme = useTheme()
+  const { t } = useI18n()
   const params = useLocalSearchParams<{ createFolder?: string; createTheme?: string }>()
   const { folders, fetch: fetchFolders, create: createFolder, update: updateFolder, remove: removeFolder } = useFoldersStore()
   const { themes, fetch: fetchThemes, create: createTheme, update: updateTheme, remove: removeTheme } = useThemesStore()
@@ -90,7 +92,7 @@ export default function OrganizeScreen() {
 
   const handleSave = async () => {
     if (!name.trim()) {
-      setNameError('Name is required')
+      setNameError(t('name') + ' is required')
       return
     }
     setSaving(true)
@@ -112,12 +114,12 @@ export default function OrganizeScreen() {
 
   const handleDelete = (item: Folder | ThemeEntity) => {
     Alert.alert(
-      `Delete ${activeTab === 'folders' ? 'folder' : 'theme'}`,
+      t('deleteConfirm'),
       `"${item.name}" will be removed.`,
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('cancel'), style: 'cancel' },
         {
-          text: 'Delete',
+          text: t('delete'),
           style: 'destructive',
           onPress: () => (activeTab === 'folders' ? removeFolder(item.id) : removeTheme(item.id)),
         },
@@ -159,11 +161,11 @@ export default function OrganizeScreen() {
           </Text>
         </View>
         <View style={[styles.colorDot, { backgroundColor: item.color }]} />
-        <TouchableOpacity onPress={() => openEdit(item)} style={{ padding: 8 }} accessibilityLabel="Edit">
-          <Text style={{ color: theme.colors.accent.primary, fontSize: 14 }}>Edit</Text>
+        <TouchableOpacity onPress={() => openEdit(item)} style={{ padding: 8 }} accessibilityLabel={t('edit')}>
+          <Text style={{ color: theme.colors.accent.primary, fontSize: 14 }}>{t('edit')}</Text>
         </TouchableOpacity>
-        <TouchableOpacity onPress={() => handleDelete(item)} style={{ padding: 8 }} accessibilityLabel="Delete">
-          <Text style={{ color: theme.colors.status.error, fontSize: 14 }}>Delete</Text>
+        <TouchableOpacity onPress={() => handleDelete(item)} style={{ padding: 8 }} accessibilityLabel={t('delete')}>
+          <Text style={{ color: theme.colors.status.error, fontSize: 14 }}>{t('delete')}</Text>
         </TouchableOpacity>
       </View>
     )
@@ -172,7 +174,7 @@ export default function OrganizeScreen() {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.bg.app }]}>
       <View style={styles.header}>
-        <Text style={[theme.typography.title1, { color: theme.colors.text.primary }]}>Organize</Text>
+        <Text style={[theme.typography.title1, { color: theme.colors.text.primary }]}>{t('organize')}</Text>
       </View>
 
       {/* Tabs */}
@@ -204,42 +206,36 @@ export default function OrganizeScreen() {
           <View style={styles.empty}>
             <Text style={{ fontSize: 40, marginBottom: 12 }}>{activeTab === 'folders' ? '📁' : '🏷️'}</Text>
             <Text style={[theme.typography.sectionTitle, { color: theme.colors.text.primary, textAlign: 'center' }]}>
-              No {activeTab} yet
+              {activeTab === 'folders' ? t('noFoldersYet') : t('noThemesYet')}
             </Text>
             <Text style={[theme.typography.body, { color: theme.colors.text.secondary, textAlign: 'center', marginTop: 8 }]}>
-              Tap + to create your first {activeTab === 'folders' ? 'folder' : 'theme'}
+              {activeTab === 'folders' ? t('createFolder') : t('createTheme')}
             </Text>
           </View>
         }
       />
-
-      <TouchableOpacity
-        style={[styles.fab, { backgroundColor: theme.colors.accent.primary }]}
-        onPress={() => openCreate()}
-        accessibilityLabel={`Create ${activeTab}`}
-      >
-        <Text style={styles.fabText}>+</Text>
-      </TouchableOpacity>
 
       {/* Create/Edit Modal */}
       <Modal visible={modalVisible} animationType="slide" presentationStyle="pageSheet">
         <SafeAreaView style={[styles.modal, { backgroundColor: theme.colors.bg.app }]}>
           <View style={[styles.modalHeader, { borderBottomColor: theme.colors.border.default }]}>
             <TouchableOpacity onPress={() => setModalVisible(false)}>
-              <Text style={[theme.typography.body, { color: theme.colors.accent.primary }]}>Cancel</Text>
+              <Text style={[theme.typography.body, { color: theme.colors.accent.primary }]}>{t('cancel')}</Text>
             </TouchableOpacity>
             <Text style={[theme.typography.bodyStrong, { color: theme.colors.text.primary }]}>
-              {editingItem ? 'Edit' : 'New'} {activeTab === 'folders' ? 'Folder' : 'Theme'}
+              {editingItem
+                ? (activeTab === 'folders' ? t('editFolder') : t('editTheme'))
+                : (activeTab === 'folders' ? t('newFolder') : t('newTheme'))}
             </Text>
             <View style={{ width: 60 }} />
           </View>
 
           <ScrollView contentContainerStyle={styles.modalBody}>
             <InputField
-              label="Name"
+              label={t('name')}
               value={name}
-              onChangeText={(t) => { setName(t); setNameError('') }}
-              placeholder={activeTab === 'folders' ? 'Folder name' : 'Theme name'}
+              onChangeText={(v) => { setName(v); setNameError('') }}
+              placeholder={activeTab === 'folders' ? t('newFolder') : t('newTheme')}
               error={nameError}
             />
 
@@ -257,17 +253,17 @@ export default function OrganizeScreen() {
             )}
 
             <Text style={[theme.typography.captionStrong, { color: theme.colors.text.secondary, marginBottom: 10, marginTop: 16 }]}>
-              COLOR
+              {t('color').toUpperCase()}
             </Text>
             <ColorPicker value={color} onChange={setColor} />
 
             <Text style={[theme.typography.captionStrong, { color: theme.colors.text.secondary, marginTop: 20, marginBottom: 10 }]}>
-              ICON
+              {t('icon').toUpperCase()}
             </Text>
             <IconPicker value={icon} onChange={setIcon} />
 
             <View style={{ marginTop: 24 }}>
-              <Button label={editingItem ? 'Save Changes' : 'Create'} onPress={handleSave} loading={saving} />
+              <Button label={editingItem ? t('save') : t('create')} onPress={handleSave} loading={saving} />
             </View>
           </ScrollView>
         </SafeAreaView>
@@ -285,17 +281,6 @@ const styles = StyleSheet.create({
   item: { flexDirection: 'row', alignItems: 'center', borderRadius: 12, borderWidth: 1, padding: 12, marginBottom: 8 },
   itemIcon: { width: 40, height: 40, borderRadius: 10, justifyContent: 'center', alignItems: 'center', marginRight: 12 },
   colorDot: { width: 14, height: 14, borderRadius: 7, marginRight: 8 },
-  fab: {
-    position: 'absolute',
-    bottom: 100,
-    right: 20,
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  fabText: { color: '#fff', fontSize: 28, lineHeight: 32 },
   empty: { paddingTop: 60, alignItems: 'center', paddingHorizontal: 40 },
   modal: { flex: 1 },
   modalHeader: {

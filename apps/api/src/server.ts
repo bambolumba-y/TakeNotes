@@ -9,6 +9,7 @@ import { notesRoutes } from './modules/notes/notes.route'
 import { remindersRoutes } from './modules/reminders/reminders.route'
 import { devicesRoutes } from './modules/devices/devices.route'
 import { channelsRoutes } from './modules/channels/channels.route'
+import { archiveRoutes } from './modules/archive/archive.route'
 
 export function buildServer() {
   const app = Fastify({ logger: true })
@@ -26,6 +27,7 @@ export function buildServer() {
   app.register(devicesRoutes, { prefix: '/' })
   // channelsRoutes: authenticated sub-routes + public Telegram webhook (validated by secret header)
   app.register(channelsRoutes, { prefix: '/' })
+  app.register(archiveRoutes, { prefix: '/' })
 
   // Sentry error handler — must be registered after routes
   app.setErrorHandler((error, _request, reply) => {

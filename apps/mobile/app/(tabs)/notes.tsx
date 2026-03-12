@@ -20,17 +20,19 @@ import { NoteCard } from '@/components/NoteCard'
 import { SearchInput } from '@/components/SearchInput'
 import { FolderStrip } from '@/components/FolderStrip'
 import { useDebounce } from '@/hooks/useDebounce'
+import { useI18n } from '@/lib/i18n'
 
 type SortOption = 'updated_at' | 'created_at' | 'title'
 
-const SORT_OPTIONS: { value: SortOption; label: string }[] = [
-  { value: 'updated_at', label: 'Updated' },
-  { value: 'created_at', label: 'Created' },
-  { value: 'title', label: 'Title' },
-]
-
 export default function NotesScreen() {
   const theme = useTheme()
+  const { t } = useI18n()
+
+  const SORT_OPTIONS: { value: SortOption; label: string }[] = [
+    { value: 'updated_at', label: t('sortByUpdated') },
+    { value: 'created_at', label: t('sortByCreated') },
+    { value: 'title', label: t('sortByTitle') },
+  ]
   const { notes, isLoading, setQuery } = useNotesStore()
   const { folders, fetch: fetchFolders } = useFoldersStore()
   const { themes, fetch: fetchThemes } = useThemesStore()
@@ -69,7 +71,7 @@ export default function NotesScreen() {
       useNotesStore.setState({ notes: data, isLoading: false })
       setHasEverLoaded(true)
     } catch {
-      setError('Something went wrong')
+      setError(t('somethingWentWrong'))
       useNotesStore.setState({ isLoading: false })
     }
   }
@@ -101,7 +103,7 @@ export default function NotesScreen() {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.bg.app }]}>
         <View style={styles.header}>
-          <Text style={[theme.typography.title1, { color: theme.colors.text.primary }]}>Notes</Text>
+          <Text style={[theme.typography.title1, { color: theme.colors.text.primary }]}>{t('notes')}</Text>
         </View>
         <View style={styles.centered}>
           <ActivityIndicator size="large" color={theme.colors.accent.primary} />
@@ -114,18 +116,18 @@ export default function NotesScreen() {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.bg.app }]}>
         <View style={styles.header}>
-          <Text style={[theme.typography.title1, { color: theme.colors.text.primary }]}>Notes</Text>
+          <Text style={[theme.typography.title1, { color: theme.colors.text.primary }]}>{t('notes')}</Text>
         </View>
         <View style={styles.centered}>
           <Text style={{ fontSize: 40, marginBottom: 16 }}>⚠️</Text>
           <Text style={[theme.typography.sectionTitle, { color: theme.colors.text.primary, textAlign: 'center' }]}>
-            Something went wrong
+            {t('somethingWentWrong')}
           </Text>
           <TouchableOpacity
             style={[styles.ctaButton, { backgroundColor: theme.colors.accent.soft, marginTop: 16 }]}
             onPress={loadNotes}
           >
-            <Text style={[theme.typography.bodyStrong, { color: theme.colors.accent.primary }]}>Try again</Text>
+            <Text style={[theme.typography.bodyStrong, { color: theme.colors.accent.primary }]}>{t('tryAgain')}</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -135,10 +137,10 @@ export default function NotesScreen() {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.bg.app }]}>
       <View style={styles.header}>
-        <Text style={[theme.typography.title1, { color: theme.colors.text.primary }]}>Notes</Text>
+        <Text style={[theme.typography.title1, { color: theme.colors.text.primary }]}>{t('notes')}</Text>
       </View>
 
-      <SearchInput value={search} onChangeText={setSearch} placeholder="Search notes..." />
+      <SearchInput value={search} onChangeText={setSearch} placeholder={t('searchNotes')} />
       <FolderStrip folders={folders} selectedId={selectedFolder} onSelect={handleFolderSelect} />
 
       {/* Sort + Theme filter bar */}
@@ -201,16 +203,16 @@ export default function NotesScreen() {
         <View style={styles.centered}>
           <Text style={{ fontSize: 40, marginBottom: 16 }}>🔍</Text>
           <Text style={[theme.typography.sectionTitle, { color: theme.colors.text.primary, textAlign: 'center' }]}>
-            No results for your search
+            {t('noResults')}
           </Text>
           <Text style={[theme.typography.body, { color: theme.colors.text.secondary, textAlign: 'center', marginTop: 8 }]}>
-            Try adjusting your filters or search term
+            {t('tryAdjustingFilters')}
           </Text>
           <TouchableOpacity
             style={[styles.ctaButton, { backgroundColor: theme.colors.accent.soft, marginTop: 16 }]}
             onPress={clearFilters}
           >
-            <Text style={[theme.typography.bodyStrong, { color: theme.colors.accent.primary }]}>Clear filters</Text>
+            <Text style={[theme.typography.bodyStrong, { color: theme.colors.accent.primary }]}>{t('clearFilters')}</Text>
           </TouchableOpacity>
         </View>
       ) : notes.length === 0 && !isLoading ? (
@@ -218,16 +220,16 @@ export default function NotesScreen() {
         <View style={styles.centered}>
           <Text style={{ fontSize: 48, marginBottom: 16 }}>📝</Text>
           <Text style={[theme.typography.sectionTitle, { color: theme.colors.text.primary, textAlign: 'center' }]}>
-            No notes yet
+            {t('noNotesYet')}
           </Text>
           <Text style={[theme.typography.body, { color: theme.colors.text.secondary, textAlign: 'center', marginTop: 8 }]}>
-            Tap the + button to create your first note
+            {t('noNotesYetBody')}
           </Text>
           <TouchableOpacity
             style={[styles.ctaButton, { backgroundColor: theme.colors.accent.soft, marginTop: 20 }]}
             onPress={() => router.push('/notes/new')}
           >
-            <Text style={[theme.typography.bodyStrong, { color: theme.colors.accent.primary }]}>Create note</Text>
+            <Text style={[theme.typography.bodyStrong, { color: theme.colors.accent.primary }]}>{t('createNote')}</Text>
           </TouchableOpacity>
         </View>
       ) : (
@@ -253,7 +255,7 @@ export default function NotesScreen() {
                       { color: theme.colors.text.tertiary, marginBottom: 8, paddingHorizontal: 16 },
                     ]}
                   >
-                    PINNED
+                    {t('pinned').toUpperCase()}
                   </Text>
                   {pinned.map((note) => (
                     <View key={note.id} style={{ paddingHorizontal: 16 }}>
@@ -270,7 +272,7 @@ export default function NotesScreen() {
                       { color: theme.colors.text.tertiary, marginBottom: 8, paddingHorizontal: 16 },
                     ]}
                   >
-                    RECENT
+                    {t('recent').toUpperCase()}
                   </Text>
                   {recent.map((note) => (
                     <View key={note.id} style={{ paddingHorizontal: 16 }}>
