@@ -2,7 +2,8 @@ import { Tabs } from 'expo-router'
 import { router } from 'expo-router'
 import { useTheme } from '@/theme/useTheme'
 import { FAB } from '@/components/FAB'
-import { View } from 'react-native'
+import { View, Text } from 'react-native'
+import { useI18n } from '@/lib/i18n'
 
 const FAB_ACTIONS = [
   { label: 'New Note', onPress: () => router.push('/notes/new') },
@@ -13,6 +14,7 @@ const FAB_ACTIONS = [
 
 export default function TabLayout() {
   const theme = useTheme()
+  const { t } = useI18n()
 
   return (
     <View style={{ flex: 1 }}>
@@ -37,23 +39,23 @@ export default function TabLayout() {
       >
         <Tabs.Screen
           name="notes"
-          options={{ title: 'Notes', tabBarIcon: ({ color }) => <TabIcon name="notes" color={color} /> }}
+          options={{ title: t('notes'), tabBarIcon: ({ color }) => <TabIcon name="notes" color={color} /> }}
         />
         <Tabs.Screen
           name="reminders"
-          options={{ title: 'Reminders', tabBarIcon: ({ color }) => <TabIcon name="reminders" color={color} /> }}
+          options={{ title: t('reminders'), tabBarIcon: ({ color }) => <TabIcon name="reminders" color={color} /> }}
         />
         <Tabs.Screen
           name="archive"
-          options={{ title: 'Archive', tabBarIcon: ({ color }) => <TabIcon name="archive" color={color} /> }}
+          options={{ title: t('archive'), tabBarIcon: ({ color }) => <TabIcon name="archive" color={color} /> }}
         />
         <Tabs.Screen
           name="organize"
-          options={{ title: 'Organize', tabBarIcon: ({ color }) => <TabIcon name="organize" color={color} /> }}
+          options={{ title: t('organize'), tabBarIcon: ({ color }) => <TabIcon name="organize" color={color} /> }}
         />
         <Tabs.Screen
           name="settings"
-          options={{ title: 'Settings', tabBarIcon: ({ color }) => <TabIcon name="settings" color={color} /> }}
+          options={{ title: t('settings'), tabBarIcon: ({ color }) => <TabIcon name="settings" color={color} /> }}
         />
       </Tabs>
       <FAB actions={FAB_ACTIONS} />
@@ -69,6 +71,5 @@ function TabIcon({ name, color }: { name: string; color: string }) {
     organize: '🗂️',
     settings: '⚙️',
   }
-  const { Text } = require('react-native')
   return <Text style={{ fontSize: 20 }} accessibilityLabel={name}>{icons[name]}</Text>
 }

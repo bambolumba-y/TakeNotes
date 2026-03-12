@@ -1,5 +1,14 @@
 import React, { useState } from 'react'
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Alert } from 'react-native'
+import {
+  View,
+  Text,
+  ScrollView,
+  StyleSheet,
+  TouchableOpacity,
+  Alert,
+  Platform,
+} from 'react-native'
+import DateTimePicker, { type DateTimePickerEvent } from '@react-native-community/datetimepicker'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { router } from 'expo-router'
 import { useForm, Controller } from 'react-hook-form'
@@ -11,6 +20,7 @@ import { useThemesStore } from '@/store/themes'
 import { InputField } from '@/components/ui/InputField'
 import { Button } from '@/components/ui/Button'
 import type { Folder, ThemeEntity } from '@takenotes/shared'
+import { useI18n } from '@/lib/i18n'
 
 const PRIORITY_OPTIONS = [
   { value: ReminderPriority.Low, label: 'Low', color: '#12B76A' },
@@ -33,8 +43,37 @@ const RECURRENCE_OPTIONS = [
   { value: RecurrenceType.Yearly, label: 'Yearly' },
 ]
 
+/**
+ * Format a Date as a readable date string: "Mon, Mar 12 2026"
+ */
+function formatDate(date: Date): string {
+  return date.toLocaleDateString(undefined, {
+    weekday: 'short',
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+  })
+}
+
+/**
+ * Format a Date as HH:MM (24h or locale-default)
+ */
+function formatTime(date: Date): string {
+  return date.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })
+}
+
+/**
+ * Combine the date part of `datePart` with the time part of `timePart` into one Date.
+ */
+function combineDateAndTime(datePart: Date, timePart: Date): Date {
+  const combined = new Date(datePart)
+  combined.setHours(timePart.getHours(), timePart.getMinutes(), 0, 0)
+  return combined
+}
+
 export default function NewReminderScreen() {
   const theme = useTheme()
+  const { t } = useI18n()
   const { create } = useRemindersStore()
   const { folders } = useFoldersStore()
   const { themes } = useThemesStore()
@@ -46,9 +85,18 @@ export default function NewReminderScreen() {
   const [recurrenceType, setRecurrenceType] = useState<RecurrenceType>(RecurrenceType.None)
   const [saving, setSaving] = useState(false)
 
-  const [dueDate, setDueDate] = useState(() => {
-    const d = new Date(); d.setHours(d.getHours() + 1, 0, 0, 0); return d.toISOString().slice(0, 16)
-  })
+  // Separate date and time state
+  const initialDue = (() => {
+    const d = new Date()
+    d.setHours(d.getHours() + 1, 0, 0, 0)
+    return d
+  })()
+  const [dueDatePart, setDueDatePart] = useState<Date>(initialDue)
+  const [dueTimePart, setDueTimePart] = useState<Date>(initialDue)
+
+  // Picker visibility
+  const [showDatePicker, setShowDatePicker] = useState(false)
+  const [showTimePicker, setShowTimePicker] = useState(false)
 
   const { control, handleSubmit, formState: { errors } } = useForm<{ title: string; description?: string }>({
     defaultValues: { title: '', description: '' },
@@ -56,18 +104,41 @@ export default function NewReminderScreen() {
 
   const toggleChannel = (ch: ReminderChannel) => {
     setSelectedChannels((prev) =>
-      prev.includes(ch) ? (prev.length > 1 ? prev.filter((c) => c !== ch) : prev) : [...prev, ch]
+      prev.includes(ch)
+        ? prev.length > 1
+          ? prev.filter((c) => c !== ch)
+          : prev
+        : [...prev, ch],
     )
   }
 
+  const onDateChange = (_event: DateTimePickerEvent, selectedDate?: Date) => {
+    // On Android the picker closes automatically; on iOS we close manually
+    if (Platform.OS === 'android') setShowDatePicker(false)
+    if (selectedDate) {
+      setDueDatePart(selectedDate)
+    }
+  }
+
+  const onTimeChange = (_event: DateTimePickerEvent, selectedDate?: Date) => {
+    if (Platform.OS === 'android') setShowTimePicker(false)
+    if (selectedDate) {
+      setDueTimePart(selectedDate)
+    }
+  }
+
   const onSubmit = async (data: { title: string; description?: string }) => {
-    if (!dueDate) { Alert.alert('Error', 'Please set a due date and time'); return }
+    const dueAt = combineDateAndTime(dueDatePart, dueTimePart)
+    if (dueAt <= new Date()) {
+      Alert.alert('Invalid time', 'Due time must be in the future')
+      return
+    }
     setSaving(true)
     try {
       await create({
         title: data.title,
         description: data.description || undefined,
-        dueAt: new Date(dueDate).toISOString(),
+        dueAt: dueAt.toISOString(),
         timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
         priority: selectedPriority,
         folderId: selectedFolder,
@@ -84,43 +155,150 @@ export default function NewReminderScreen() {
   }
 
   const SectionLabel = ({ text }: { text: string }) => (
-    <Text style={[theme.typography.captionStrong, { color: theme.colors.text.tertiary, marginBottom: 8 }]}>{text}</Text>
+    <Text style={[theme.typography.captionStrong, { color: theme.colors.text.tertiary, marginBottom: 8 }]}>
+      {text}
+    </Text>
   )
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.bg.app }]}>
       <View style={[styles.topBar, { borderBottomColor: theme.colors.border.default }]}>
         <TouchableOpacity onPress={() => router.back()}>
-          <Text style={[theme.typography.body, { color: theme.colors.accent.primary }]}>Cancel</Text>
+          <Text style={[theme.typography.body, { color: theme.colors.accent.primary }]}>{t('cancel')}</Text>
         </TouchableOpacity>
-        <Text style={[theme.typography.bodyStrong, { color: theme.colors.text.primary }]}>New Reminder</Text>
+        <Text style={[theme.typography.bodyStrong, { color: theme.colors.text.primary }]}>{t('newReminder')}</Text>
         <View style={{ width: 60 }} />
       </View>
 
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
-        <Controller control={control} name="title" rules={{ required: 'Title is required' }}
+        {/* Title */}
+        <Controller
+          control={control}
+          name="title"
+          rules={{ required: 'Title is required' }}
           render={({ field: { onChange, onBlur, value } }) => (
-            <InputField label="Title" placeholder="Reminder title" value={value} onChangeText={onChange} onBlur={onBlur} error={errors.title?.message} />
+            <InputField
+              label={t('title')}
+              placeholder="Reminder title"
+              value={value}
+              onChangeText={onChange}
+              onBlur={onBlur}
+              error={errors.title?.message}
+            />
           )}
         />
 
-        <Controller control={control} name="description"
+        {/* Description */}
+        <Controller
+          control={control}
+          name="description"
           render={({ field: { onChange, onBlur, value } }) => (
-            <InputField label="Description (optional)" placeholder="Add details..." value={value ?? ''} onChangeText={onChange} onBlur={onBlur} />
+            <InputField
+              label={`${t('description')} (optional)`}
+              placeholder="Add details..."
+              value={value ?? ''}
+              onChangeText={onChange}
+              onBlur={onBlur}
+            />
           )}
         />
 
-        {/* Due Date/Time */}
+        {/* Due Date & Time */}
         <View style={styles.section}>
           <SectionLabel text="DUE DATE & TIME" />
-          <InputField
-            label=""
-            value={dueDate}
-            onChangeText={setDueDate}
-            placeholder="YYYY-MM-DDTHH:MM"
-            autoCapitalize="none"
-          />
-          <Text style={[theme.typography.micro, { color: theme.colors.text.tertiary }]}>
+
+          {/* Date picker row */}
+          <TouchableOpacity
+            style={[
+              styles.pickerRow,
+              {
+                backgroundColor: theme.colors.bg.input,
+                borderColor: theme.colors.border.default,
+              },
+            ]}
+            onPress={() => {
+              setShowTimePicker(false)
+              setShowDatePicker(true)
+            }}
+            activeOpacity={0.75}
+          >
+            <Text style={[theme.typography.captionStrong, { color: theme.colors.text.secondary }]}>
+              {t('dueDate')}
+            </Text>
+            <Text style={[theme.typography.body, { color: theme.colors.text.primary }]}>
+              {formatDate(dueDatePart)}
+            </Text>
+          </TouchableOpacity>
+
+          {/* Time picker row */}
+          <TouchableOpacity
+            style={[
+              styles.pickerRow,
+              {
+                backgroundColor: theme.colors.bg.input,
+                borderColor: theme.colors.border.default,
+                marginTop: 8,
+              },
+            ]}
+            onPress={() => {
+              setShowDatePicker(false)
+              setShowTimePicker(true)
+            }}
+            activeOpacity={0.75}
+          >
+            <Text style={[theme.typography.captionStrong, { color: theme.colors.text.secondary }]}>
+              {t('dueTime')}
+            </Text>
+            <Text style={[theme.typography.body, { color: theme.colors.text.primary }]}>
+              {formatTime(dueTimePart)}
+            </Text>
+          </TouchableOpacity>
+
+          {/* Native date picker */}
+          {showDatePicker && (
+            <DateTimePicker
+              value={dueDatePart}
+              mode="date"
+              display={Platform.OS === 'ios' ? 'inline' : 'default'}
+              minimumDate={new Date()}
+              onChange={onDateChange}
+              style={{ marginTop: 8 }}
+            />
+          )}
+
+          {/* Close button for iOS inline date picker */}
+          {showDatePicker && Platform.OS === 'ios' && (
+            <TouchableOpacity
+              style={{ alignItems: 'flex-end', paddingVertical: 4 }}
+              onPress={() => setShowDatePicker(false)}
+            >
+              <Text style={[theme.typography.bodyStrong, { color: theme.colors.accent.primary }]}>Done</Text>
+            </TouchableOpacity>
+          )}
+
+          {/* Native time picker */}
+          {showTimePicker && (
+            <DateTimePicker
+              value={dueTimePart}
+              mode="time"
+              display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+              is24Hour={true}
+              onChange={onTimeChange}
+              style={{ marginTop: 8 }}
+            />
+          )}
+
+          {/* Close button for iOS spinner time picker */}
+          {showTimePicker && Platform.OS === 'ios' && (
+            <TouchableOpacity
+              style={{ alignItems: 'flex-end', paddingVertical: 4 }}
+              onPress={() => setShowTimePicker(false)}
+            >
+              <Text style={[theme.typography.bodyStrong, { color: theme.colors.accent.primary }]}>Done</Text>
+            </TouchableOpacity>
+          )}
+
+          <Text style={[theme.typography.micro, { color: theme.colors.text.tertiary, marginTop: 6 }]}>
             Timezone: {Intl.DateTimeFormat().resolvedOptions().timeZone}
           </Text>
         </View>
@@ -134,10 +312,23 @@ export default function NewReminderScreen() {
               return (
                 <TouchableOpacity
                   key={opt.value}
-                  style={[styles.chip, { borderColor: selected ? opt.color : theme.colors.border.default, backgroundColor: selected ? opt.color + '20' : 'transparent' }]}
+                  style={[
+                    styles.chip,
+                    {
+                      borderColor: selected ? opt.color : theme.colors.border.default,
+                      backgroundColor: selected ? opt.color + '20' : 'transparent',
+                    },
+                  ]}
                   onPress={() => setSelectedPriority(opt.value)}
                 >
-                  <Text style={[theme.typography.captionStrong, { color: selected ? opt.color : theme.colors.text.secondary }]}>{opt.label}</Text>
+                  <Text
+                    style={[
+                      theme.typography.captionStrong,
+                      { color: selected ? opt.color : theme.colors.text.secondary },
+                    ]}
+                  >
+                    {opt.label}
+                  </Text>
                 </TouchableOpacity>
               )
             })}
@@ -153,11 +344,24 @@ export default function NewReminderScreen() {
               return (
                 <TouchableOpacity
                   key={ch.value}
-                  style={[styles.chip, { borderColor: selected ? theme.colors.accent.primary : theme.colors.border.default, backgroundColor: selected ? theme.colors.accent.soft : 'transparent' }]}
+                  style={[
+                    styles.chip,
+                    {
+                      borderColor: selected ? theme.colors.accent.primary : theme.colors.border.default,
+                      backgroundColor: selected ? theme.colors.accent.soft : 'transparent',
+                    },
+                  ]}
                   onPress={() => toggleChannel(ch.value)}
                 >
                   <Text style={{ marginRight: 4 }}>{ch.icon}</Text>
-                  <Text style={[theme.typography.captionStrong, { color: selected ? theme.colors.accent.primary : theme.colors.text.secondary }]}>{ch.label}</Text>
+                  <Text
+                    style={[
+                      theme.typography.captionStrong,
+                      { color: selected ? theme.colors.accent.primary : theme.colors.text.secondary },
+                    ]}
+                  >
+                    {ch.label}
+                  </Text>
                 </TouchableOpacity>
               )
             })}
@@ -173,10 +377,23 @@ export default function NewReminderScreen() {
               return (
                 <TouchableOpacity
                   key={opt.value}
-                  style={[styles.chip, { borderColor: selected ? theme.colors.accent.primary : theme.colors.border.default, backgroundColor: selected ? theme.colors.accent.soft : 'transparent' }]}
+                  style={[
+                    styles.chip,
+                    {
+                      borderColor: selected ? theme.colors.accent.primary : theme.colors.border.default,
+                      backgroundColor: selected ? theme.colors.accent.soft : 'transparent',
+                    },
+                  ]}
                   onPress={() => setRecurrenceType(opt.value)}
                 >
-                  <Text style={[theme.typography.captionStrong, { color: selected ? theme.colors.accent.primary : theme.colors.text.secondary }]}>{opt.label}</Text>
+                  <Text
+                    style={[
+                      theme.typography.captionStrong,
+                      { color: selected ? theme.colors.accent.primary : theme.colors.text.secondary },
+                    ]}
+                  >
+                    {opt.label}
+                  </Text>
                 </TouchableOpacity>
               )
             })}
@@ -189,18 +406,36 @@ export default function NewReminderScreen() {
             <SectionLabel text="FOLDER" />
             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
               <TouchableOpacity
-                style={[styles.chip, { borderColor: !selectedFolder ? theme.colors.accent.primary : theme.colors.border.default, backgroundColor: !selectedFolder ? theme.colors.accent.soft : 'transparent', marginRight: 8 }]}
+                style={[
+                  styles.chip,
+                  {
+                    borderColor: !selectedFolder ? theme.colors.accent.primary : theme.colors.border.default,
+                    backgroundColor: !selectedFolder ? theme.colors.accent.soft : 'transparent',
+                    marginRight: 8,
+                  },
+                ]}
                 onPress={() => setSelectedFolder(null)}
               >
-                <Text style={[theme.typography.caption, { color: !selectedFolder ? theme.colors.accent.primary : theme.colors.text.secondary }]}>None</Text>
+                <Text style={[theme.typography.caption, { color: !selectedFolder ? theme.colors.accent.primary : theme.colors.text.secondary }]}>
+                  None
+                </Text>
               </TouchableOpacity>
               {folders.map((f: Folder) => (
                 <TouchableOpacity
                   key={f.id}
-                  style={[styles.chip, { borderColor: selectedFolder === f.id ? f.color : theme.colors.border.default, backgroundColor: selectedFolder === f.id ? f.color + '20' : 'transparent', marginRight: 8 }]}
+                  style={[
+                    styles.chip,
+                    {
+                      borderColor: selectedFolder === f.id ? f.color : theme.colors.border.default,
+                      backgroundColor: selectedFolder === f.id ? f.color + '20' : 'transparent',
+                      marginRight: 8,
+                    },
+                  ]}
                   onPress={() => setSelectedFolder(f.id)}
                 >
-                  <Text style={[theme.typography.caption, { color: selectedFolder === f.id ? f.color : theme.colors.text.secondary }]}>{f.name}</Text>
+                  <Text style={[theme.typography.caption, { color: selectedFolder === f.id ? f.color : theme.colors.text.secondary }]}>
+                    {f.name}
+                  </Text>
                 </TouchableOpacity>
               ))}
             </ScrollView>
@@ -212,15 +447,27 @@ export default function NewReminderScreen() {
           <View style={styles.section}>
             <SectionLabel text="THEMES" />
             <View style={styles.chipRow}>
-              {themes.map((t: ThemeEntity) => {
-                const selected = selectedThemes.includes(t.id)
+              {themes.map((th: ThemeEntity) => {
+                const selected = selectedThemes.includes(th.id)
                 return (
                   <TouchableOpacity
-                    key={t.id}
-                    style={[styles.chip, { borderColor: selected ? t.color : theme.colors.border.default, backgroundColor: selected ? t.color + '20' : 'transparent' }]}
-                    onPress={() => setSelectedThemes((prev) => prev.includes(t.id) ? prev.filter((id) => id !== t.id) : [...prev, t.id])}
+                    key={th.id}
+                    style={[
+                      styles.chip,
+                      {
+                        borderColor: selected ? th.color : theme.colors.border.default,
+                        backgroundColor: selected ? th.color + '20' : 'transparent',
+                      },
+                    ]}
+                    onPress={() =>
+                      setSelectedThemes((prev) =>
+                        prev.includes(th.id) ? prev.filter((id) => id !== th.id) : [...prev, th.id],
+                      )
+                    }
                   >
-                    <Text style={[theme.typography.caption, { color: selected ? t.color : theme.colors.text.secondary }]}>{t.name}</Text>
+                    <Text style={[theme.typography.caption, { color: selected ? th.color : theme.colors.text.secondary }]}>
+                      {th.name}
+                    </Text>
                   </TouchableOpacity>
                 )
               })}
@@ -229,7 +476,7 @@ export default function NewReminderScreen() {
         )}
 
         <View style={{ marginTop: 8 }}>
-          <Button label="Create Reminder" onPress={handleSubmit(onSubmit)} loading={saving} />
+          <Button label={t('createReminder')} onPress={handleSubmit(onSubmit)} loading={saving} />
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -238,9 +485,32 @@ export default function NewReminderScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  topBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 12, borderBottomWidth: 1 },
+  topBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+  },
   scroll: { padding: 20, paddingBottom: 100 },
   section: { marginBottom: 20 },
   chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  chip: { flexDirection: 'row', alignItems: 'center', borderWidth: 1.5, borderRadius: 999, paddingHorizontal: 14, paddingVertical: 7 },
+  chip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1.5,
+    borderRadius: 999,
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+  },
+  pickerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    height: 52,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    paddingHorizontal: 16,
+  },
 })

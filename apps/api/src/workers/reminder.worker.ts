@@ -101,6 +101,26 @@ async function processJob(job: Job<ReminderDeliveryJobData>): Promise<void> {
     // 7. Mark job as completed
     await supabase.from('reminder_jobs').update({ status: 'completed' }).eq('id', reminderJobId)
     workerLog.info('Job completed successfully')
+
+    // 8. After successful delivery, update reminder lifecycle
+    const repeatRule = reminder.repeatRule as { type?: string } | null
+    const isRecurring = repeatRule && repeatRule.type && repeatRule.type !== 'none'
+
+    if (!isRecurring) {
+      // One-time reminder: mark completed and archive it
+      await supabase
+        .from('reminders')
+        .update({
+          status: ReminderStatus.Completed,
+          completed_at: new Date().toISOString(),
+          archived_at: new Date().toISOString(),
+        })
+        .eq('id', reminderId)
+      workerLog.info('One-time reminder marked completed and archived after delivery')
+    } else {
+      // Recurring reminders: keep active, next job will be scheduled separately
+      workerLog.info({ repeat_rule: repeatRule }, 'Recurring reminder kept active after delivery')
+    }
   } catch (err) {
     const errMsg = (err as Error).message
     await supabase.from('reminder_jobs').update({ status: 'failed', last_error: errMsg }).eq('id', reminderJobId)
