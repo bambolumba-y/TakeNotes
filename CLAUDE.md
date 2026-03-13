@@ -531,3 +531,54 @@ When the agent bumps a version it must update all three locations atomically in 
 
 ## 17. Final rule
 The agent must treat this repository as a precise engineering implementation project. When in doubt, preserve the documented domain model, documented user flows, documented navigation, and documented design system.
+
+---
+
+## 18. Build & CI infrastructure
+
+### Mobile build (Bitrise)
+- Config source: `bitrise.yml` in repository root (set "Store in repository" in Bitrise UI)
+- All `EXPO_PUBLIC_*` vars must be set in `app.envs` section of `bitrise.yml` — they must be available when Gradle runs, not just during `expo prebuild`
+- pnpm is pre-installed on Bitrise machines; skip install if already present: `if ! command -v pnpm &> /dev/null; then npm install -g pnpm@9; fi`
+- Workflow name: `android-apk`; artifact path: `apps/mobile/android/app/build/outputs/apk/release/app-release.apk`
+
+### Mobile build (GitHub Actions)
+- Workflow: `.github/workflows/build-android.yml`; triggers on push to `master` when `apps/mobile/**` changes
+- Pass all `EXPO_PUBLIC_*` env vars to BOTH the `expo prebuild` step AND the `./gradlew assembleRelease` step
+- Supabase URL and anon key stored as GitHub Actions secrets: `EXPO_PUBLIC_SUPABASE_URL`, `EXPO_PUBLIC_SUPABASE_ANON_KEY`
+
+### API on VPS (PM2)
+- PM2 config: `apps/api/ecosystem.config.js`; script: `dist/index.js`; cwd: `/root/TakeNotes/apps/api`
+- After VPS restart: `cd ~/TakeNotes && git pull && cd apps/api && pnpm build && pm2 start ecosystem.config.js && pm2 save`
+- Run `pm2 startup` + `pm2 save` once to persist across reboots
+- API domain: `https://api.yisscraft.ru` (Nginx reverse proxy + Certbot HTTPS)
+
+### Icon generation
+- Source: `logo.svg` in repo root; convert to PNG using sharp from sharp-cli: `require('C:/Users/bambolumba/AppData/Roaming/npm/node_modules/sharp-cli/node_modules/sharp')`
+- `assets/icon.png`: 1024×1024 with dark `#0B1020` background
+- `assets/adaptive-icon.png`: 1024×1024 with transparent background (logo centered, 256px padding); `backgroundColor` in `app.json` provides the color
+- `assets/splash.png`: 1284×2778 with dark background, logo centered
+
+---
+
+## 19. Known architecture gotchas
+
+- `EXPO_PUBLIC_*` env vars are baked into the JS bundle at Gradle build time, not at `expo prebuild` time — always pass them to the Gradle step
+- `supabase createClient('', '')` throws `supabaseUrl is required` immediately on startup — empty env var = instant crash
+- pnpm `workspace:*` protocol is not understood by npm — always use `pnpm install`, never `npm install` in this monorepo
+- `node-linker=hoisted` in `.npmrc` is required for Metro bundler to resolve packages
+- `expo-build-properties` plugin with `kotlinVersion: "1.9.25"` is required to avoid Compose Compiler/Kotlin version mismatch in Gradle
+- Import `import 'dotenv/config'` as the **first line** of `apps/api/src/index.ts` — PM2 does not load `.env` files automatically
+- Archive routes (`apps/api/src/modules/archive/archive.route.ts`) must be registered in `server.ts`
+- `GET /reminders/archived` must come before `GET /reminders/:id` in route registration order (otherwise `:id` matches the string "archived")
+- Delivery worker: use `orchestrateDelivery` with per-channel error collection — do not throw on first failure or remaining channels are skipped
+
+---
+
+## 20. i18n rules
+
+- Translation store: `apps/mobile/src/lib/i18n.ts` — Zustand store, `useI18n()` hook, `t(key)` function
+- Both `en` and `ru` dictionaries must stay in sync — every new key goes in both locales
+- Module-level static arrays that need translations (PRIORITY_OPTIONS, CHANNEL_OPTIONS, etc.) must be defined **inside** the component function, after `const { t } = useI18n()`
+- `useI18n` can also be called outside React via `useI18n.getState().setLocale(locale)` for profile-driven locale sync
+- Locale is detected from device on first launch via `expo-localization` `getLocales()`
