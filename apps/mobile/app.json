@@ -2,7 +2,7 @@
   "expo": {
     "name": "TakeNotes",
     "slug": "takenotes",
-    "version": "1.0.3",
+    "version": "1.0.4",
     "scheme": "takenotes",
     "owner": "bambolumba",
     "platforms": ["ios", "android"],
@@ -22,7 +22,7 @@
         "backgroundColor": "#5B7CFA"
       },
       "package": "com.yisscraft.takenotes",
-      "versionCode": 4
+      "versionCode": 5
     },
     "plugins": [
       "expo-router",
