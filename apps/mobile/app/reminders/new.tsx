@@ -149,7 +149,7 @@ export default function NewReminderScreen() {
       })
       router.back()
     } catch (e) {
-      Alert.alert('Error', (e as Error).message || 'Failed to create reminder')
+      Alert.alert(t('somethingWentWrong'), (e as Error).message || t('failedToSave'))
     } finally {
       setSaving(false)
     }
@@ -176,11 +176,11 @@ export default function NewReminderScreen() {
         <Controller
           control={control}
           name="title"
-          rules={{ required: 'Title is required' }}
+          rules={{ required: t('titleRequired') }}
           render={({ field: { onChange, onBlur, value } }) => (
             <InputField
               label={t('title')}
-              placeholder="Reminder title"
+              placeholder={t('reminderTitlePlaceholder')}
               value={value}
               onChangeText={onChange}
               onBlur={onBlur}
@@ -195,8 +195,8 @@ export default function NewReminderScreen() {
           name="description"
           render={({ field: { onChange, onBlur, value } }) => (
             <InputField
-              label={`${t('description')} (optional)`}
-              placeholder="Add details..."
+              label={`${t('description')} (${t('optional')})`}
+              placeholder={t('addDetails')}
               value={value ?? ''}
               onChangeText={onChange}
               onBlur={onBlur}
@@ -300,7 +300,7 @@ export default function NewReminderScreen() {
           )}
 
           <Text style={[theme.typography.micro, { color: theme.colors.text.tertiary, marginTop: 6 }]}>
-            Timezone: {Intl.DateTimeFormat().resolvedOptions().timeZone}
+            {t('timezoneLabel')} {Intl.DateTimeFormat().resolvedOptions().timeZone}
           </Text>
         </View>
 

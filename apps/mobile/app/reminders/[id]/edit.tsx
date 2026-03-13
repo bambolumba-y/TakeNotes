@@ -25,24 +25,24 @@ import type { Folder, ThemeEntity, Reminder } from '@takenotes/shared'
 import { useI18n } from '@/lib/i18n'
 
 const PRIORITY_OPTIONS = [
-  { value: ReminderPriority.Low, label: 'Low', color: '#12B76A' },
-  { value: ReminderPriority.Medium, label: 'Medium', color: '#F79009' },
-  { value: ReminderPriority.High, label: 'High', color: '#FB923C' },
-  { value: ReminderPriority.Urgent, label: 'Urgent', color: '#F04438' },
+  { value: ReminderPriority.Low, labelKey: 'low' as const, color: '#12B76A' },
+  { value: ReminderPriority.Medium, labelKey: 'medium' as const, color: '#F79009' },
+  { value: ReminderPriority.High, labelKey: 'high' as const, color: '#FB923C' },
+  { value: ReminderPriority.Urgent, labelKey: 'urgent' as const, color: '#F04438' },
 ]
 
 const CHANNEL_OPTIONS = [
-  { value: ReminderChannel.Push, label: 'Push', icon: '🔔' },
-  { value: ReminderChannel.Email, label: 'Email', icon: '✉️' },
-  { value: ReminderChannel.Telegram, label: 'Telegram', icon: '✈️' },
+  { value: ReminderChannel.Push, labelKey: 'pushOnly' as const, icon: '🔔' },
+  { value: ReminderChannel.Email, labelKey: 'emailChannel' as const, icon: '✉️' },
+  { value: ReminderChannel.Telegram, labelKey: 'telegram' as const, icon: '✈️' },
 ]
 
 const RECURRENCE_OPTIONS = [
-  { value: RecurrenceType.None, label: 'None' },
-  { value: RecurrenceType.Daily, label: 'Daily' },
-  { value: RecurrenceType.Weekly, label: 'Weekly' },
-  { value: RecurrenceType.Monthly, label: 'Monthly' },
-  { value: RecurrenceType.Yearly, label: 'Yearly' },
+  { value: RecurrenceType.None, labelKey: 'none' as const },
+  { value: RecurrenceType.Daily, labelKey: 'daily' as const },
+  { value: RecurrenceType.Weekly, labelKey: 'weekly' as const },
+  { value: RecurrenceType.Monthly, labelKey: 'monthly' as const },
+  { value: RecurrenceType.Yearly, labelKey: 'yearly' as const },
 ]
 
 function formatDate(date: Date): string {
@@ -202,7 +202,7 @@ export default function EditReminderScreen() {
       })
       router.back()
     } catch (e) {
-      Alert.alert('Error', (e as Error).message || 'Failed to update reminder')
+      Alert.alert(t('somethingWentWrong'), (e as Error).message || t('failedToUpdate'))
     } finally {
       setSaving(false)
     }
@@ -229,11 +229,11 @@ export default function EditReminderScreen() {
         <Controller
           control={control}
           name="title"
-          rules={{ required: 'Title is required' }}
+          rules={{ required: t('titleRequired') }}
           render={({ field: { onChange, onBlur, value } }) => (
             <InputField
               label={t('title')}
-              placeholder="Reminder title"
+              placeholder={t('reminderTitlePlaceholder')}
               value={value}
               onChangeText={onChange}
               onBlur={onBlur}
@@ -248,8 +248,8 @@ export default function EditReminderScreen() {
           name="description"
           render={({ field: { onChange, onBlur, value } }) => (
             <InputField
-              label={`${t('description')} (optional)`}
-              placeholder="Add details..."
+              label={`${t('description')} (${t('optional')})`}
+              placeholder={t('addDetails')}
               value={value ?? ''}
               onChangeText={onChange}
               onBlur={onBlur}
@@ -337,7 +337,7 @@ export default function EditReminderScreen() {
                   onPress={() => setSelectedPriority(opt.value)}
                 >
                   <Text style={[theme.typography.captionStrong, { color: selected ? opt.color : theme.colors.text.secondary }]}>
-                    {opt.label}
+                    {t(opt.labelKey)}
                   </Text>
                 </TouchableOpacity>
               )
@@ -359,7 +359,7 @@ export default function EditReminderScreen() {
                 >
                   <Text style={{ marginRight: 4 }}>{ch.icon}</Text>
                   <Text style={[theme.typography.captionStrong, { color: selected ? theme.colors.accent.primary : theme.colors.text.secondary }]}>
-                    {ch.label}
+                    {t(ch.labelKey)}
                   </Text>
                 </TouchableOpacity>
               )
@@ -380,7 +380,7 @@ export default function EditReminderScreen() {
                   onPress={() => setRecurrenceType(opt.value)}
                 >
                   <Text style={[theme.typography.captionStrong, { color: selected ? theme.colors.accent.primary : theme.colors.text.secondary }]}>
-                    {opt.label}
+                    {t(opt.labelKey)}
                   </Text>
                 </TouchableOpacity>
               )

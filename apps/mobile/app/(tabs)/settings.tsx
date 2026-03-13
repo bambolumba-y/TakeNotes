@@ -97,6 +97,7 @@ function EditModal({
   onClose,
 }: EditModalProps) {
   const theme = useTheme()
+  const { t } = useI18n()
   const [value, setValue] = useState(initialValue)
 
   // Sync value when modal opens with a new initialValue
@@ -152,7 +153,7 @@ function EditModal({
               disabled={saving}
             >
               <Text style={[theme.typography.bodyStrong, { color: theme.colors.text.secondary }]}>
-                Cancel
+                {t('cancel')}
               </Text>
             </TouchableOpacity>
             <TouchableOpacity
@@ -163,7 +164,7 @@ function EditModal({
               {saving ? (
                 <ActivityIndicator color="#fff" size="small" />
               ) : (
-                <Text style={[theme.typography.bodyStrong, { color: '#FFFFFF' }]}>Save</Text>
+                <Text style={[theme.typography.bodyStrong, { color: '#FFFFFF' }]}>{t('save')}</Text>
               )}
             </TouchableOpacity>
           </View>
@@ -254,7 +255,7 @@ export default function SettingsScreen() {
       await updateProfile({ displayName: value })
       setNicknameModal(false)
     } catch (e) {
-      Alert.alert('Error', (e as Error).message || 'Failed to update nickname')
+      Alert.alert(t('somethingWentWrong'), (e as Error).message || t('failedToUpdate'))
     } finally {
       setNicknameSaving(false)
     }
@@ -268,14 +269,14 @@ export default function SettingsScreen() {
     try {
       const { error } = await supabase.auth.updateUser({ email: newEmail })
       if (error) throw new Error(error.message)
-      setEmailHint('A confirmation email has been sent to your new address. Please verify it.')
+      setEmailHint(t('confirmationEmailSent'))
       // Keep modal open briefly so user sees the message, then close
       setTimeout(() => {
         setEmailModal(false)
         setEmailHint('')
       }, 3000)
     } catch (e) {
-      Alert.alert('Error', (e as Error).message || 'Failed to update email')
+      Alert.alert(t('somethingWentWrong'), (e as Error).message || t('failedToUpdate'))
     } finally {
       setEmailSaving(false)
     }
@@ -288,7 +289,7 @@ export default function SettingsScreen() {
       await updateProfile({ timezone: tz })
       setTimezoneModal(false)
     } catch (e) {
-      Alert.alert('Error', (e as Error).message || 'Failed to update timezone')
+      Alert.alert(t('somethingWentWrong'), (e as Error).message || t('failedToUpdate'))
     } finally {
       setTimezoneSaving(false)
     }
@@ -302,7 +303,7 @@ export default function SettingsScreen() {
       setLocale(newLocale)
       setLocaleModal(false)
     } catch (e) {
-      Alert.alert('Error', (e as Error).message || 'Failed to update language')
+      Alert.alert(t('somethingWentWrong'), (e as Error).message || t('failedToUpdate'))
     } finally {
       setLocaleSaving(false)
     }
@@ -348,10 +349,10 @@ export default function SettingsScreen() {
   }
 
   const handleTelegramDisconnect = () => {
-    Alert.alert('Disconnect Telegram', 'You will no longer receive Telegram reminders.', [
-      { text: 'Cancel', style: 'cancel' },
+    Alert.alert(t('disconnectTelegram'), t('disconnectTelegramBody'), [
+      { text: t('cancel'), style: 'cancel' },
       {
-        text: 'Disconnect',
+        text: t('disconnect'),
         style: 'destructive',
         onPress: async () => {
           try {
@@ -360,7 +361,7 @@ export default function SettingsScreen() {
             setTelegramLinkState('idle')
             stopTelegramPoll()
           } catch {
-            Alert.alert('Error', 'Failed to disconnect')
+            Alert.alert(t('somethingWentWrong'), t('failedToConnect'))
           }
         },
       },
@@ -499,7 +500,7 @@ export default function SettingsScreen() {
               onPress={() => Linking.openURL(connectBotLink)}
             >
               <Text style={[theme.typography.bodyStrong, { color: theme.colors.accent.primary }]}>
-                Open in Telegram
+                {t('openInTelegram')}
               </Text>
             </TouchableOpacity>
             <TouchableOpacity
@@ -551,7 +552,7 @@ export default function SettingsScreen() {
         </Section>
 
         <Section title={t('about')}>
-          <SettingsRow label="TakeNotes" value={`${t('version')} 1.0.0`} />
+          <SettingsRow label="TakeNotes" value={`${t('version')} 1.0.5`} />
         </Section>
       </ScrollView>
 
@@ -560,7 +561,7 @@ export default function SettingsScreen() {
         visible={nicknameModal}
         title={t('nickname')}
         initialValue={profile?.displayName ?? ''}
-        placeholder="Your nickname"
+        placeholder={t('yourNickname')}
         saving={nicknameSaving}
         onSave={handleNicknameSave}
         onClose={() => setNicknameModal(false)}

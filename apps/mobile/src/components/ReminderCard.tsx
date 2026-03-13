@@ -1,6 +1,7 @@
 import React from 'react'
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native'
 import { useTheme } from '@/theme/useTheme'
+import { useI18n } from '@/lib/i18n'
 import type { Reminder } from '@takenotes/shared'
 import { ReminderPriority, ReminderChannel } from '@takenotes/shared'
 
@@ -27,8 +28,16 @@ interface ReminderCardProps {
   onPress: () => void
 }
 
+const PRIORITY_KEYS: Record<ReminderPriority, 'low' | 'medium' | 'high' | 'urgent'> = {
+  [ReminderPriority.Low]: 'low',
+  [ReminderPriority.Medium]: 'medium',
+  [ReminderPriority.High]: 'high',
+  [ReminderPriority.Urgent]: 'urgent',
+}
+
 export function ReminderCard({ reminder, onPress }: ReminderCardProps) {
   const theme = useTheme()
+  const { t } = useI18n()
   const priorityColors = theme.isDark ? PRIORITY_COLORS_DARK : PRIORITY_COLORS_LIGHT
   const priorityColor = priorityColors[reminder.priority]
   const isOverdue = new Date(reminder.dueAt) < new Date() && reminder.status === 'active' && (!reminder.snoozeUntil || new Date(reminder.snoozeUntil) < new Date())
@@ -53,7 +62,7 @@ export function ReminderCard({ reminder, onPress }: ReminderCardProps) {
         </Text>
         <View style={[styles.priorityBadge, { backgroundColor: priorityColor + '20' }]}>
           <Text style={[theme.typography.micro, { color: priorityColor }]}>
-            {reminder.priority.toUpperCase()}
+            {t(PRIORITY_KEYS[reminder.priority]).toUpperCase()}
           </Text>
         </View>
       </View>

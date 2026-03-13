@@ -46,7 +46,7 @@ export default function NoteDetailScreen() {
       await update(id, { title: title.trim(), content, folderId: selectedFolder, themeIds: selectedThemes, isPinned })
       setEditing(false)
     } catch {
-      Alert.alert('Error', 'Failed to update note')
+      Alert.alert(t('somethingWentWrong'), t('failedToUpdate'))
     } finally {
       setSaving(false)
     }

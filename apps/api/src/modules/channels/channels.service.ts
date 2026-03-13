@@ -1,4 +1,5 @@
 import { supabase } from '../../lib/supabase'
+import { env } from '../../config/env'
 import crypto from 'node:crypto'
 
 function generateVerificationToken(): string {
@@ -22,7 +23,7 @@ export async function initiateTelegramConnect(userId: string): Promise<{ verific
 
   if (error) throw new Error(error.message)
 
-  const botUsername = process.env.TELEGRAM_BOT_USERNAME ?? 'TakeNotesBot'
+  const botUsername = env.TELEGRAM_BOT_USERNAME
   return { verificationToken, botUsername }
 }
 

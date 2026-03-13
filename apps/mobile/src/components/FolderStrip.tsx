@@ -1,6 +1,7 @@
 import React from 'react'
 import { ScrollView, TouchableOpacity, Text, View, StyleSheet } from 'react-native'
 import { useTheme } from '@/theme/useTheme'
+import { useI18n } from '@/lib/i18n'
 import type { Folder } from '@takenotes/shared'
 
 interface FolderStripProps {
@@ -11,6 +12,7 @@ interface FolderStripProps {
 
 export function FolderStrip({ folders, selectedId, onSelect }: FolderStripProps) {
   const theme = useTheme()
+  const { t } = useI18n()
   if (!folders.length) return null
 
   return (
@@ -31,7 +33,7 @@ export function FolderStrip({ folders, selectedId, onSelect }: FolderStripProps)
         accessibilityLabel="All folders"
       >
         <Text style={[theme.typography.captionStrong, { color: selectedId === null ? '#fff' : theme.colors.text.secondary }]}>
-          All
+          {t('all')}
         </Text>
       </TouchableOpacity>
 

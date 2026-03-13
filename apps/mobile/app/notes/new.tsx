@@ -8,9 +8,11 @@ import { useFoldersStore } from '@/store/folders'
 import { useThemesStore } from '@/store/themes'
 import { Button } from '@/components/ui/Button'
 import type { Folder, ThemeEntity } from '@takenotes/shared'
+import { useI18n } from '@/lib/i18n'
 
 export default function NewNoteScreen() {
   const theme = useTheme()
+  const { t } = useI18n()
   const { create } = useNotesStore()
   const { folders } = useFoldersStore()
   const { themes } = useThemesStore()
@@ -28,13 +30,13 @@ export default function NewNoteScreen() {
   }
 
   const handleSave = async () => {
-    if (!title.trim()) { setTitleError('Title is required'); return }
+    if (!title.trim()) { setTitleError(t('titleRequired')); return }
     setSaving(true)
     try {
       await create({ title: title.trim(), content, folderId: selectedFolder, themeIds: selectedThemes, isPinned })
       router.back()
     } catch (e) {
-      Alert.alert('Error', 'Failed to save note')
+      Alert.alert(t('somethingWentWrong'), t('failedToSave'))
     } finally {
       setSaving(false)
     }
@@ -44,9 +46,9 @@ export default function NewNoteScreen() {
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.bg.app }]}>
       <View style={[styles.topBar, { borderBottomColor: theme.colors.border.default }]}>
         <TouchableOpacity onPress={() => router.back()} accessibilityLabel="Cancel">
-          <Text style={[theme.typography.body, { color: theme.colors.accent.primary }]}>Cancel</Text>
+          <Text style={[theme.typography.body, { color: theme.colors.accent.primary }]}>{t('cancel')}</Text>
         </TouchableOpacity>
-        <Text style={[theme.typography.bodyStrong, { color: theme.colors.text.primary }]}>New Note</Text>
+        <Text style={[theme.typography.bodyStrong, { color: theme.colors.text.primary }]}>{t('newNote')}</Text>
         <TouchableOpacity onPress={() => setIsPinned((v) => !v)} accessibilityLabel="Toggle pin">
           <Text style={{ fontSize: 20 }}>{isPinned ? '📌' : '📍'}</Text>
         </TouchableOpacity>
@@ -57,7 +59,7 @@ export default function NewNoteScreen() {
           style={[theme.typography.title2, styles.titleInput, { color: theme.colors.text.primary }]}
           value={title}
           onChangeText={(t) => { setTitle(t); setTitleError('') }}
-          placeholder="Title"
+          placeholder={t('title')}
           placeholderTextColor={theme.colors.text.tertiary}
           accessibilityLabel="Note title"
           multiline={false}
@@ -72,7 +74,7 @@ export default function NewNoteScreen() {
           style={[theme.typography.body, styles.contentInput, { color: theme.colors.text.primary, backgroundColor: theme.colors.bg.surface, borderColor: theme.colors.border.default }]}
           value={content}
           onChangeText={setContent}
-          placeholder="Start writing..."
+          placeholder={t('addDetails')}
           placeholderTextColor={theme.colors.text.tertiary}
           multiline
           textAlignVertical="top"
@@ -81,13 +83,13 @@ export default function NewNoteScreen() {
 
         {folders.length > 0 && (
           <View style={styles.section}>
-            <Text style={[theme.typography.captionStrong, { color: theme.colors.text.tertiary, marginBottom: 8 }]}>FOLDER</Text>
+            <Text style={[theme.typography.captionStrong, { color: theme.colors.text.tertiary, marginBottom: 8 }]}>{t('folderLabel')}</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -4 }}>
               <TouchableOpacity
                 style={[styles.chip, { borderColor: selectedFolder === null ? theme.colors.accent.primary : theme.colors.border.default, backgroundColor: selectedFolder === null ? theme.colors.accent.soft : 'transparent' }]}
                 onPress={() => setSelectedFolder(null)}
               >
-                <Text style={[theme.typography.caption, { color: selectedFolder === null ? theme.colors.accent.primary : theme.colors.text.secondary }]}>None</Text>
+                <Text style={[theme.typography.caption, { color: selectedFolder === null ? theme.colors.accent.primary : theme.colors.text.secondary }]}>{t('none')}</Text>
               </TouchableOpacity>
               {folders.map((f: Folder) => (
                 <TouchableOpacity
@@ -104,7 +106,7 @@ export default function NewNoteScreen() {
 
         {themes.length > 0 && (
           <View style={styles.section}>
-            <Text style={[theme.typography.captionStrong, { color: theme.colors.text.tertiary, marginBottom: 8 }]}>THEMES</Text>
+            <Text style={[theme.typography.captionStrong, { color: theme.colors.text.tertiary, marginBottom: 8 }]}>{t('themesLabel')}</Text>
             <View style={styles.themeGrid}>
               {themes.map((t: ThemeEntity) => {
                 const selected = selectedThemes.includes(t.id)
@@ -123,7 +125,7 @@ export default function NewNoteScreen() {
         )}
 
         <View style={{ marginTop: 16 }}>
-          <Button label="Save Note" onPress={handleSave} loading={saving} />
+          <Button label={t('saveNote')} onPress={handleSave} loading={saving} />
         </View>
       </ScrollView>
     </SafeAreaView>

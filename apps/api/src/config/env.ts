@@ -11,6 +11,7 @@ const envSchema = z.object({
   RESEND_API_KEY: z.string().optional(),
   RESEND_FROM_EMAIL: z.string().default('reminders@takenotes.app'),
   TELEGRAM_BOT_TOKEN: z.string().optional(),
+  TELEGRAM_BOT_USERNAME: z.string().default('takenotess_bot'),
   TELEGRAM_WEBHOOK_SECRET: z.string().optional(),
   EXPO_ACCESS_TOKEN: z.string().optional(),
   APP_DEEP_LINK_BASE: z.string().default('takenotes://'),

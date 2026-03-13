@@ -92,7 +92,7 @@ export default function OrganizeScreen() {
 
   const handleSave = async () => {
     if (!name.trim()) {
-      setNameError(t('name') + ' is required')
+      setNameError(t('titleRequired'))
       return
     }
     setSaving(true)
@@ -106,7 +106,7 @@ export default function OrganizeScreen() {
       }
       setModalVisible(false)
     } catch {
-      Alert.alert('Error', 'Failed to save. Please try again.')
+      Alert.alert(t('somethingWentWrong'), t('failedToSave'))
     } finally {
       setSaving(false)
     }
@@ -115,7 +115,7 @@ export default function OrganizeScreen() {
   const handleDelete = (item: Folder | ThemeEntity) => {
     Alert.alert(
       t('deleteConfirm'),
-      `"${item.name}" will be removed.`,
+      t('deleteConfirmBody'),
       [
         { text: t('cancel'), style: 'cancel' },
         {
@@ -157,7 +157,7 @@ export default function OrganizeScreen() {
         <View style={{ flex: 1 }}>
           <Text style={[theme.typography.bodyStrong, { color: theme.colors.text.primary }]}>{item.name}</Text>
           <Text style={[theme.typography.caption, { color: theme.colors.text.tertiary, marginTop: 2 }]}>
-            {noteCount} note{noteCount !== 1 ? 's' : ''}  ·  {reminderCount} reminder{reminderCount !== 1 ? 's' : ''}
+            {noteCount} {t('notes').toLowerCase()}  ·  {reminderCount} {t('reminders').toLowerCase()}
           </Text>
         </View>
         <View style={[styles.colorDot, { backgroundColor: item.color }]} />
@@ -191,7 +191,7 @@ export default function OrganizeScreen() {
                 { color: activeTab === tab ? theme.colors.accent.primary : theme.colors.text.secondary },
               ]}
             >
-              {tab.charAt(0).toUpperCase() + tab.slice(1)}
+              {tab === 'themes' ? t('themes') : t('folders')}
             </Text>
           </TouchableOpacity>
         ))}

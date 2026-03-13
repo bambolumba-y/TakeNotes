@@ -42,14 +42,14 @@ export default function ReminderDetailScreen() {
   const handleComplete = async () => {
     setCompleting(true)
     try { await complete(id); router.back() }
-    catch (e) { Alert.alert('Error', (e as Error).message) }
+    catch (e) { Alert.alert(t('somethingWentWrong'), (e as Error).message) }
     finally { setCompleting(false) }
   }
 
   const handleSnooze = async (minutes: number) => {
     const until = new Date(Date.now() + minutes * 60 * 1000).toISOString()
     try { await snooze(id, until); setSnoozeModalVisible(false); remindersService.get(id).then(setReminder) }
-    catch (e) { Alert.alert('Error', (e as Error).message) }
+    catch (e) { Alert.alert(t('somethingWentWrong'), (e as Error).message) }
   }
 
   const handleCancel = () => {
@@ -63,7 +63,7 @@ export default function ReminderDetailScreen() {
       setCancelModalVisible(false)
       router.back()
     } catch (e) {
-      Alert.alert('Error', (e as Error).message)
+      Alert.alert(t('somethingWentWrong'), (e as Error).message)
     } finally {
       setCancelling(false)
     }
@@ -71,7 +71,7 @@ export default function ReminderDetailScreen() {
 
   if (!reminder) return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.bg.app }]}>
-      <Text style={[theme.typography.body, { color: theme.colors.text.secondary, textAlign: 'center', marginTop: 60 }]}>Loading...</Text>
+      <Text style={[theme.typography.body, { color: theme.colors.text.secondary, textAlign: 'center', marginTop: 60 }]}>{t('loading')}</Text>
     </SafeAreaView>
   )
 
